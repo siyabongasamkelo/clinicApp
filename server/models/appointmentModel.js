@@ -11,16 +11,21 @@ const appointmentSchema = new mongoose.Schema(
     doctorId: {
       type: String,
       required: true,
-      unique: true,
       minLength: 3,
       maxLength: 13,
     },
     status: {
       type: String,
       required: true,
-      unique: true,
-      minLength: 3,
-      maxLength: 50,
+      enum: [
+        "scheduled",
+        "confirmed",
+        "in-progress",
+        "completed",
+        "cancelled",
+        "no-show",
+      ],
+      default: "scheduled",
     },
   },
   {
