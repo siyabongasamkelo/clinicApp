@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import app from "./index.js";
 import mongoose from "mongoose";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -12,6 +13,9 @@ const connection = mongoose.connection;
 connection.once("open", () => {
   console.log("MongoDB database connection established successfully");
 });
+
+//routes
+app.use("/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
