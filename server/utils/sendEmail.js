@@ -1,20 +1,18 @@
-// utils/sendEmail.js
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT),
-  secure: false, // 587 = false
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
-
 const sendEmail = async ({ to, subject, html, text }) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Clinic App" <${process.env.EMAIL_USER}>`,
+      from: `"Clinic App" <${process.env.EMAIL_SENDER}>`,
       to,
       subject,
       text,
