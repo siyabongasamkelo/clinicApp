@@ -1,13 +1,10 @@
 import express from "express";
 const router = express.Router();
-import { confirmEmail, registerUser } from "../controllers/authController.js";
-import { loginUser } from "../controllers/authController.js";
-import { getUser } from "../controllers/authController.js";
-import { getAllUsers } from "../controllers/authController.js";
-import { deleteUser } from "../controllers/authController.js";
-import { updateUser } from "../controllers/authController.js";
-import { forgotPassword } from "../controllers/authController.js";
-import { resetPassword } from "../controllers/authController.js";
+
+import {
+  verifyEmailRequest,
+  registerUser,
+} from "../controllers/authController.js";
 
 /**
  * @swagger
@@ -36,13 +33,5 @@ import { resetPassword } from "../controllers/authController.js";
  */
 
 router.post("/register", registerUser);
-router.post("/login", loginUser);
-router.get("/get/:userId", getUser);
-router.get("/get", getAllUsers);
-router.delete("/delete/:userId", deleteUser);
-router.put("/update/:userId", updateUser);
-router.post("/confirmemail", confirmEmail);
-router.post("/forgotpassword", forgotPassword);
-router.post("/resetpassword/:userId/:token", resetPassword);
-
+router.post("/verify-email-request", verifyEmailRequest);
 export default router;
