@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 import validator from "validator";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
 import { cloudinary } from "../utils/cloudinary.js";
 import sendEmail from "../utils/sendEmail.js";
 
@@ -183,7 +182,7 @@ const verifyEmailRequest = async (req, res) => {
     // Build verification link
     const baseUrl = process.env.BASEURL?.replace(/\/+$/, "") || "";
     const verificationLink = `${baseUrl}/auth/confirmemail?email=${encodeURIComponent(
-      normalizedEmail
+      normalizedEmail,
     )}&token=${encodeURIComponent(token)}`;
 
     // Send email
@@ -214,4 +213,4 @@ const verifyEmailRequest = async (req, res) => {
   }
 };
 
-export { registerUser, verifyEmailRequest };
+export { registerUser, verifyEmailRequest, createToken };
