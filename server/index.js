@@ -4,6 +4,7 @@ import cors from "cors";
 import morgan from "morgan";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import authRoutes from "./routes/authRoutes.js"; // doing this for tests to access routers
 
 //middlewares
 const app = express();
@@ -12,6 +13,8 @@ app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());
 app.use(fileupload({ useTempFiles: true }));
+
+app.use("/auth", authRoutes); // for tests
 
 const swaggerOptions = {
   definition: {
