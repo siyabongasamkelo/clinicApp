@@ -2,8 +2,10 @@ import dotenv from "dotenv";
 import app from "./index.js";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
+import dns from "node:dns";
 
-dotenv.config();
+dotenv.config({ quiet: true });
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 // MongoDB Connection
 mongoose.set("strictQuery", true);
