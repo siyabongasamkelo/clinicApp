@@ -41,7 +41,7 @@ const medicalRecordSchema = new mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const medicalRecordModel = mongoose.model("MedicalRecord", medicalRecordSchema);
