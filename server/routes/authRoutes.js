@@ -1,9 +1,13 @@
 import express from "express";
+import dotenv from "dotenv";
+dotenv.config();
+
 const router = express.Router();
 
 import {
   verifyEmailRequest,
   registerUser,
+  verifyEmail,
 } from "../controllers/authController.js";
 
 /**
@@ -33,5 +37,9 @@ import {
  */
 
 router.post("/register", registerUser);
+
 router.post("/verify-email-request", verifyEmailRequest);
+
+router.get("/confirmemail", verifyEmail);
+
 export default router;
