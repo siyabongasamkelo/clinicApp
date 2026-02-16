@@ -91,6 +91,7 @@ const registerUser = async (req, res) => {
 
     // Ensure uniqueness
     const userExists = await userModel.findOne({ email: normalizedEmail });
+
     if (userExists) {
       return res.status(409).json({ message: "Email already exists" });
     }
@@ -213,4 +214,49 @@ const verifyEmailRequest = async (req, res) => {
   }
 };
 
-export { registerUser, verifyEmailRequest, createToken };
+const verifyEmail = async (req, res) => {
+  try {
+    const { email, token } = req.query || {};
+
+    // Validate input presence
+    if (typeof email !== "string" || !email.trim()) {
+      return res.status(422).json({ message: "Please provide your email." });
+    }
+    if (typeof token !== "string" || !token.trim()) {
+      return res.status(422).json({ message: "Please provide your token." });
+    }
+
+    // Normalize and validate email
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validator.isEmail(normalizedEmail)) {
+      return res.status(422).json({ message: "Please provide a valid email." });
+    }
+
+    // Look up the user
+    const user = await userModel.findOne({ email: normalizedEmail });
+
+    // If you prefer to avoid user enumeration, do not reveal existence
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Verify token
+    try {
+      jwt.verify(token, process.env.JWT_SECRETE_KEY);
+    } catch (tokenErr) {
+      console.error("Token verification failed:", tokenErr);
+      return res.status(401).json({ message: "Invalid token." });
+    }
+
+    // Update user
+    user.isVerified = "true";
+    await user.save();
+
+    return res.status(200).json({ message: "Email successfully verified." });
+  } catch (err) {
+    console.error("verifyEmail error:", err);
+    return res.status(500).json({ message: "An unexpected error occurred." });
+  }
+};
+
+export { registerUser, verifyEmailRequest, createToken, verifyEmail };
