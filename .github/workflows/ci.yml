@@ -22,6 +22,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Debug secrets
+        run: |
+          echo "CLOUDINARY_API_KEY is set? ${CLOUDINARY_API_KEY:+yes}"
+
       - name: Install dependencies
         run: npm install
         working-directory: ./server
@@ -33,7 +37,3 @@ jobs:
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-
-      - name: Debug secrets
-        run: |
-          echo "CLOUDINARY_API_KEY is set? ${CLOUDINARY_API_KEY:+yes}"
