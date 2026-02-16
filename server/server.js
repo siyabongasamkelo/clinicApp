@@ -18,7 +18,7 @@ connection.once("open", () => {
 
 //routes
 app.use("/auth", authRoutes);
-console.log("CI KEY:", process.env.CLOUDINARY_API_KEY);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
