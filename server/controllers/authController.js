@@ -259,4 +259,67 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-export { registerUser, verifyEmailRequest, createToken, verifyEmail };
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+
+    // Validate input presence
+    if (typeof email !== "string" || !email.trim()) {
+      return res.status(422).json({ message: "Please provide your email." });
+    }
+    if (typeof password !== "string" || !password.trim()) {
+      return res.status(422).json({ message: "Please provide your password." });
+    }
+
+    // Normalize and validate email
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validator.isEmail(normalizedEmail)) {
+      return res.status(422).json({ message: "Please provide a valid email." });
+    }
+
+    // Look up the user
+    const user = await userModel.findOne({ email: normalizedEmail });
+
+    // If you prefer to avoid user enumeration, do not reveal existence
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.isVerified === "false") {
+      return res.status(401).json({ message: "Please verify your email." });
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    // Create and send token
+    const token = createToken(user._id);
+
+    return res.status(201).json({
+      message: "User logged in successfully",
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        profilePhoto: user.profilePhoto,
+        role: user.role,
+        token: token,
+        isVerified: user.isVerified,
+      },
+    });
+  } catch (err) {
+    console.error("User login error:", err);
+    return res.status(500).json({ message: "An unexpected error occurred." });
+  }
+};
+
+export {
+  registerUser,
+  verifyEmailRequest,
+  createToken,
+  verifyEmail,
+  loginUser,
+};
