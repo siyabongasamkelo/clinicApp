@@ -2,11 +2,11 @@ import { userModel } from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import validator from "validator";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 import { cloudinary } from "../utils/cloudinary.js";
 import sendEmail from "../utils/sendEmail.js";
-
-dotenv.config();
+if (process.env.NODE_ENV !== "CI") {
+  import("dotenv").then((dotenv) => dotenv.config());
+}
 
 const createToken = (id) => {
   const jwtKey = process.env.JWT_SECRETE_KEY;
