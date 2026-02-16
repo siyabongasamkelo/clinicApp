@@ -19,8 +19,6 @@ jobs:
       CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
       CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
 
-    environment: myenvironment
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
