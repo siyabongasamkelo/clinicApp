@@ -30,7 +30,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("POST /auth/register", () => {
-  console.log("CI KEY:", process.env.CLOUDINARY_API_KEY);
   it("should register a new user with profile photo", async () => {
     const res = await request(index)
       .post("/auth/register")
