@@ -3,12 +3,11 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import index from "../index";
 import { userModel } from "../models/userModel.js";
+import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-if (process.env.NODE_ENV !== "CI") {
-  import("dotenv").then((dotenv) => dotenv.config());
-}
+dotenv.config();
 
 let mongoServer;
 

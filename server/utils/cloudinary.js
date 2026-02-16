@@ -1,10 +1,9 @@
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const cloudinary = require("cloudinary").v2;
-if (process.env.NODE_ENV !== "CI") {
-  import("dotenv").then((dotenv) => dotenv.config());
-}
+import dotenv from "dotenv";
 
+dotenv.config();
 console.log("CI KEY:", process.env.CLOUDINARY_API_KEY);
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

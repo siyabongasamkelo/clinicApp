@@ -36,4 +36,4 @@ jobs:
 
       - name: Debug secrets
         run: |
-          echo "CLOUDINARY_API_KEY: $CLOUDINARY_API_KEY"
+          echo "CLOUDINARY_API_KEY is set? ${CLOUDINARY_API_KEY:+yes}"

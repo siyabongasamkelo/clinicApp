@@ -1,11 +1,10 @@
+import dotenv from "dotenv";
 import app from "./index.js";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
 import dns from "node:dns";
 
-if (process.env.NODE_ENV !== "CI") {
-  import("dotenv").then((dotenv) => dotenv.config());
-}
+dotenv.config({ quiet: true });
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 // MongoDB Connection
