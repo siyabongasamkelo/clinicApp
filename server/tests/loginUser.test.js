@@ -5,9 +5,7 @@ await jest.unstable_mockModule("../models/userModel.js", () => ({
   userModel: {
     findOne: jest.fn(),
     create: jest.fn(),
-    // add any other methods your controller calls
   },
-  // Keep default just in case, though named is what's failing
   default: {
     findOne: jest.fn(),
     create: jest.fn(),
