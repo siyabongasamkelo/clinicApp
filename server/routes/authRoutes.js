@@ -47,6 +47,29 @@ router.get("/confirmemail", verifyEmail);
 
 router.post("/login", loginUser);
 
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset link
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reset link sent successfully
+ *       404:
+ *         description: User not found
+ */
+router.post("/forgot-password", forgotPasswordLink);
+
 router.post("/forgot-password", forgotPasswordLink);
 
 router.post("/reset-password/:id/:token", resetPassword);
