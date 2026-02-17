@@ -5,9 +5,10 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { cloudinary } from "../utils/cloudinary.js";
 import sendEmail from "../utils/sendEmail.js";
+import path from "path";
 
 dotenv.config();
-
+// helping functions
 const createToken = (id) => {
   const jwtKey = process.env.JWT_SECRETE_KEY;
   return jwt.sign({ id }, jwtKey, { expiresIn: "3d" });
@@ -47,6 +48,7 @@ const verifyAndCompareUserId = (token, userId) => {
   }
 };
 
+// actual routes controller functions
 const registerUser = async (req, res) => {
   try {
     const { email, password, username, role } = req.body || {};
@@ -316,10 +318,72 @@ const loginUser = async (req, res) => {
   }
 };
 
+const forgotPasswordLink = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Validate email input
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validator.isEmail(normalizedEmail)) {
+      return res.status(422).json({ message: "Please provide a valid email." });
+    }
+
+    // Find user
+    const user = await userModel.findOne({ normalizedEmail });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "No account found with that email." });
+    }
+
+    // Create a temporary secret for the JWT
+    const secret = process.env.JWT_SECRETE_KEY + user.password;
+
+    // Generate the Reset Token (expires in 15-20 minutes for security)
+    const token = jwt.sign({ id: user._id, email: user.email }, secret, {
+      expiresIn: "20m",
+    });
+
+    // Create the Link
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${user._id}/${token}`;
+
+    // Define the Email Content
+    const htmlContent = `
+      <div style="font-family: sans-serif; line-height: 1.5;">
+        <h2>Password Reset Request</h2>
+        <p>You requested a password reset. Click the button below to set a new password:</p>
+        <a href="${resetUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset My Password</a>
+        <p>This link is valid for <b>20 minutes</b> only.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      </div>
+    `;
+
+    // Send Email using your reusable helper
+    await sendEmail({
+      to: user.email,
+      subject: "Reset your Clinic App Password",
+      html: htmlContent,
+      text: `Reset your password here: ${resetUrl}`,
+    });
+
+    res
+      .status(200)
+      .json({ success: true, message: "Reset link sent to email." });
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 export {
   registerUser,
   verifyEmailRequest,
   createToken,
   verifyEmail,
   loginUser,
+  forgotPasswordLink,
 };
