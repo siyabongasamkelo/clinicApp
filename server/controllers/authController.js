@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { cloudinary } from "../utils/cloudinary.js";
 import sendEmail from "../utils/sendEmail.js";
-import path from "path";
 
 dotenv.config();
 // helping functions
@@ -349,7 +348,8 @@ const forgotPasswordLink = async (req, res) => {
     });
 
     // Create the Link
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${user._id}/${token}`;
+    const baseUrl = process.env.BASEURL?.replace(/\/+$/, "") || "";
+    const resetUrl = `${baseUrl}/auth/reset-password/${user._id}/${token}`;
 
     // Define the Email Content
     const htmlContent = `
@@ -379,6 +379,69 @@ const forgotPasswordLink = async (req, res) => {
   }
 };
 
+const resetPassword = async (req, res) => {
+  const { id, token } = req.params;
+  const { email, password } = req.body;
+
+  try {
+    // Basic Input Validation
+    if (!email || !password || !token) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    // Email Format Validation
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validator.isEmail(normalizedEmail)) {
+      return res.status(422).json({ message: "Invalid email format." });
+    }
+
+    // Password Strength Check
+    if (!validator.isStrongPassword(password)) {
+      return res.status(422).json({
+        message:
+          "Password is too weak. Must be 8+ chars with uppercase, lowercase, numbers, and symbols.",
+      });
+    }
+
+    // Find User & Reconstruct Dynamic Secret
+    const user = await userModel.findById(id);
+    if (!user || user.email !== normalizedEmail) {
+      return res
+        .status(404)
+        .json({ message: "User not found or email mismatch." });
+    }
+
+    // Secret must match exactly what was used in forgotPasswordLink
+    const secret = process.env.JWT_SECRETE_KEY + user.password;
+
+    // Verify JWT
+    try {
+      jwt.verify(token, secret);
+    } catch (err) {
+      return res
+        .status(401)
+        .json({ message: "Invalid or expired reset link." });
+    }
+
+    // Update Password
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    user.password = hashedPassword;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully. You can now log in.",
+    });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 export {
   registerUser,
   verifyEmailRequest,
@@ -386,4 +449,5 @@ export {
   verifyEmail,
   loginUser,
   forgotPasswordLink,
+  resetPassword,
 };
