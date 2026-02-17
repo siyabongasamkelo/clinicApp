@@ -9,6 +9,7 @@ import {
   registerUser,
   verifyEmail,
   loginUser,
+  forgotPasswordLink,
 } from "../controllers/authController.js";
 
 /**
@@ -44,5 +45,7 @@ router.post("/verify-email-request", verifyEmailRequest);
 router.get("/confirmemail", verifyEmail);
 
 router.post("/login", loginUser);
+
+router.post("/forgot-password", forgotPasswordLink);
 
 export default router;
