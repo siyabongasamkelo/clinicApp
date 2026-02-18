@@ -1,16 +1,19 @@
 import dotenv from "dotenv";
 import sendEmail from "../utils/sendEmail.ts";
 import {
-  ForgotPasswordRequest,
   VerifyEmailRequestBody,
+  VerifyEmailQuery,
+  ForgotPasswordLinkBody,
+  ResetPasswordBody,
+  ResetPasswordParams,
 } from "../types/auth.type.ts";
 import { Request, Response } from "express";
 import { UploadedFile } from "express-fileupload";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import { userModel, User } from "../models/userModel.js";
-import { RegisterBody } from "../types/auth.type.ts";
-import jwt, { Secret } from "jsonwebtoken";
+import { RegisterBody, LoginBody } from "../types/auth.type.ts";
+import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 dotenv.config();
@@ -228,9 +231,10 @@ export const verifyEmailRequest = async (
   }
 };
 
-/*
-
-const verifyEmail = async (req, res) => {
+export const verifyEmail = async (
+  req: Request<{}, {}, {}, VerifyEmailQuery>,
+  res: Response,
+): Promise<Response> => {
   try {
     const { email, token } = req.query || {};
 
@@ -249,7 +253,8 @@ const verifyEmail = async (req, res) => {
     }
 
     // Look up the user
-    const user = await userModel.findOne({ email: normalizedEmail });
+    let user: User | null;
+    user = await userModel.findOne({ email: normalizedEmail });
 
     // If you prefer to avoid user enumeration, do not reveal existence
     if (!user) {
@@ -257,8 +262,17 @@ const verifyEmail = async (req, res) => {
     }
 
     // Verify token
+
+    const jwtKey = process.env.JWT_SECRETE_KEY;
+
+    if (!jwtKey) {
+      throw new Error(
+        "JWT_SECRETE_KEY is not defined in the environment variables",
+      );
+    }
+
     try {
-      jwt.verify(token, process.env.JWT_SECRETE_KEY);
+      jwt.verify(token, jwtKey);
     } catch (tokenErr) {
       console.error("Token verification failed:", tokenErr);
       return res.status(401).json({ message: "Invalid token." });
@@ -275,7 +289,10 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-const loginUser = async (req, res) => {
+export const loginUser = async (
+  req: Request<{}, {}, LoginBody>,
+  res: Response,
+): Promise<Response> => {
   try {
     const { email, password } = req.body || {};
 
@@ -294,7 +311,8 @@ const loginUser = async (req, res) => {
     }
 
     // Look up the user
-    const user = await userModel.findOne({ email: normalizedEmail });
+    let user: User | null;
+    user = await userModel.findOne({ email: normalizedEmail });
 
     // If you prefer to avoid user enumeration, do not reveal existence
     if (!user) {
@@ -312,7 +330,7 @@ const loginUser = async (req, res) => {
     }
 
     // Create and send token
-    const token = createToken(user._id);
+    const token = createToken(user._id.toString());
 
     return res.status(201).json({
       message: "User logged in successfully",
@@ -332,10 +350,12 @@ const loginUser = async (req, res) => {
   }
 };
 
-const forgotPasswordLink = async (req, res) => {
-  const { email } = req.body;
-
+export const forgotPasswordLink = async (
+  req: Request<{}, {}, ForgotPasswordLinkBody>,
+  res: Response,
+): Promise<Response> => {
   try {
+    const { email } = req.body;
     // Validate email input
     if (!email) {
       return res.status(400).json({ message: "Email is required." });
@@ -347,7 +367,9 @@ const forgotPasswordLink = async (req, res) => {
     }
 
     // Find user
-    const user = await userModel.findOne({ normalizedEmail });
+    let user: User | null;
+    user = await userModel.findOne({ normalizedEmail });
+
     if (!user) {
       return res
         .status(404)
@@ -394,7 +416,10 @@ const forgotPasswordLink = async (req, res) => {
   }
 };
 
-const resetPassword = async (req, res) => {
+export const resetPassword = async (
+  req: Request<ResetPasswordParams, {}, ResetPasswordBody, {}>,
+  res: Response,
+): Promise<Response> => {
   const { id, token } = req.params;
   const { email, password } = req.body;
 
@@ -419,7 +444,8 @@ const resetPassword = async (req, res) => {
     }
 
     // Find User & Reconstruct Dynamic Secret
-    const user = await userModel.findById(id);
+    let user: User | null;
+    user = await userModel.findById(id);
     if (!user || user.email !== normalizedEmail) {
       return res
         .status(404)
@@ -456,15 +482,3 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 };
-
-export {
-  registerUser,
-  verifyEmailRequest,
-  createToken,
-  verifyEmail,
-  loginUser,
-  forgotPasswordLink,
-  resetPassword,
-};
-
-*/
