@@ -7,11 +7,11 @@ const router = express.Router();
 import {
   verifyEmailRequest,
   registerUser,
-  verifyEmail,
-  loginUser,
-  forgotPasswordLink,
-  resetPassword,
-} from "../controllers/authController.js";
+  // verifyEmail,
+  // loginUser,
+  // forgotPasswordLink,
+  // resetPassword,
+} from "../controllers/authController.ts";
 
 /**
  * @swagger
@@ -43,9 +43,9 @@ router.post("/register", registerUser);
 
 router.post("/verify-email-request", verifyEmailRequest);
 
-router.get("/confirmemail", verifyEmail);
+// router.get("/confirmemail", verifyEmail);
 
-router.post("/login", loginUser);
+// router.post("/login", loginUser);
 
 /**
  * @swagger
@@ -68,10 +68,10 @@ router.post("/login", loginUser);
  *       404:
  *         description: User not found
  */
-router.post("/forgot-password", forgotPasswordLink);
+// router.post("/forgot-password", forgotPasswordLink);
 
-router.post("/forgot-password", forgotPasswordLink);
+// router.post("/forgot-password", forgotPasswordLink);
 
-router.post("/reset-password/:id/:token", resetPassword);
+// router.post("/reset-password/:id/:token", resetPassword);
 
 export default router;
