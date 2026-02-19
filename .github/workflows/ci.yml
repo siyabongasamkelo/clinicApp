@@ -1,7 +1,8 @@
 name: Node.js CI
+
 on:
   push:
-    branches: [main]
+    branches: [main, typescriptmigration]
   pull_request:
     branches: [main]
 
@@ -15,16 +16,14 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Updated to v4 for better performance
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # Updated to v4
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Debug secrets
-        run: |
-          echo "CLOUDINARY_API_KEY is set? ${CLOUDINARY_API_KEY:+yes}"
+          cache: "npm"
+          cache-dependency-path: "./server/package-lock.json" # Caches your npm downloads
 
       - name: Install dependencies
         run: npm install
@@ -34,7 +33,12 @@ jobs:
         run: npm test
         working-directory: ./server
         env:
+          # IMPORTANT: Telling GitHub to use ESM VM modules
+          NODE_OPTIONS: "--experimental-vm-modules"
+          # Your Secrets
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           JWT_SECRETE_KEY: ${{ secrets.JWT_SECRETE_KEY }}
+          # Dummy URL for the Memory Server (if needed by your DB config)
+          MONGO_URI: "mongodb://localhost:27017/test"
