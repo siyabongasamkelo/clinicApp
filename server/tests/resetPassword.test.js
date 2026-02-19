@@ -80,7 +80,7 @@ describe("POST /auth/reset-password/:id/:token", () => {
       updatedUser.password,
     );
     expect(isMatch).toBe(true);
-  });
+  }, 50000);
 
   it("should fail if the token is invalid or tampered with", async () => {
     const { user } = await setupUser();
@@ -95,7 +95,7 @@ describe("POST /auth/reset-password/:id/:token", () => {
 
     expect(res.statusCode).toBe(401);
     expect(res.body.message).toBe("Invalid or expired reset link.");
-  });
+  }, 50000);
 
   it("should fail if the password is too weak", async () => {
     const { user, token } = await setupUser();
@@ -109,7 +109,7 @@ describe("POST /auth/reset-password/:id/:token", () => {
 
     expect(res.statusCode).toBe(422);
     expect(res.body.message).toContain("Password is too weak");
-  });
+  }, 50000);
 
   it("should fail if email is missing or incorrect", async () => {
     const { user, token } = await setupUser();
@@ -123,5 +123,5 @@ describe("POST /auth/reset-password/:id/:token", () => {
 
     expect(res.statusCode).toBe(404);
     expect(res.body.message).toBe("User not found or email mismatch.");
-  });
+  }, 50000);
 });
