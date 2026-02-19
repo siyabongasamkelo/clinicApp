@@ -1,18 +1,19 @@
 import dotenv from "dotenv";
-import sendEmail from "../utils/sendEmail.ts";
-import {
+import sendEmail from "../utils/sendEmail.js";
+import type {
   VerifyEmailRequestBody,
   VerifyEmailQuery,
   ForgotPasswordLinkBody,
   ResetPasswordBody,
   ResetPasswordParams,
-} from "../types/auth.type.ts";
-import { Request, Response } from "express";
-import { UploadedFile } from "express-fileupload";
+} from "../types/auth.type.js";
+import type { Request, Response } from "express";
+import type { UploadedFile } from "express-fileupload";
 import validator from "validator";
 import bcrypt from "bcrypt";
-import { userModel, User } from "../models/userModel.js";
-import { RegisterBody, LoginBody } from "../types/auth.type.ts";
+import { userModel } from "../models/userModel.js";
+import type { User } from "../models/userModel.js";
+import type { RegisterBody, LoginBody } from "../types/auth.type.js";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
