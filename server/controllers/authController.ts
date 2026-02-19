@@ -6,6 +6,8 @@ import type {
   ForgotPasswordLinkBody,
   ResetPasswordBody,
   ResetPasswordParams,
+  RegisterBody,
+  LoginBody,
 } from "../types/auth.type.js";
 import type { Request, Response } from "express";
 import type { UploadedFile } from "express-fileupload";
@@ -13,9 +15,9 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import { userModel } from "../models/userModel.js";
 import type { User } from "../models/userModel.js";
-import type { RegisterBody, LoginBody } from "../types/auth.type.js";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
+// import { ApiError } from "../utils/ApiError.js";
 
 dotenv.config();
 // helping functions

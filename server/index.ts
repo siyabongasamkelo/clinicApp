@@ -5,11 +5,23 @@ import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
 import authRoutes from "./routes/authRoutes.js"; // Keep .js extension for ESM/TS
 import { swaggerSpec } from "./config/swagger.js";
-
+import helmet from "helmet";
+import { globalErrorHandler } from "./middleware/errorMiddleware.js";
 // Initialize the app with the Application type
 const app: Application = express();
 
 // Middlewares
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "res.cloudinary.com"],
+      },
+    },
+  }),
+);
+
 app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());
@@ -23,5 +35,8 @@ app.use("/auth", authRoutes);
 
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+//error middleware
+app.use(globalErrorHandler);
 
 export default app;

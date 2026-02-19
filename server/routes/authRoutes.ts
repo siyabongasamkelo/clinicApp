@@ -1,9 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
-dotenv.config();
 
-const router = express.Router();
-
+// 1. Correct the extensions to .js (The ESM requirement)
 import {
   verifyEmailRequest,
   registerUser,
@@ -11,8 +9,13 @@ import {
   loginUser,
   forgotPasswordLink,
   resetPassword,
-} from "../controllers/authController.ts";
-import { authLimiter } from "../middleware/rateLimiter.ts";
+} from "../controllers/authController.js";
+
+import { authLimiter } from "../middleware/rateLimiter.js";
+
+dotenv.config();
+
+const router = express.Router();
 
 /**
  * @swagger
@@ -23,29 +26,23 @@ import { authLimiter } from "../middleware/rateLimiter.ts";
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data: # Updated to match your file upload logic
  *           schema:
  *             type: object
  *             properties:
- *               username:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *               role:
- *                 type: string
+ *               username: { type: string }
+ *               email: { type: string }
+ *               password: { type: string }
+ *               role: { type: string }
+ *               file: { type: string, format: binary }
  *     responses:
  *       201:
  *         description: User registered successfully
  */
-
 router.post("/register", authLimiter, registerUser);
 
 router.post("/verify-email-request", authLimiter, verifyEmailRequest);
-
 router.get("/confirmemail", authLimiter, verifyEmail);
-
 router.post("/login", authLimiter, loginUser);
 
 /**
@@ -61,18 +58,12 @@ router.post("/login", authLimiter, loginUser);
  *           schema:
  *             type: object
  *             properties:
- *               email:
- *                 type: string
+ *               email: { type: string }
  *     responses:
  *       200:
  *         description: Reset link sent successfully
- *       404:
- *         description: User not found
  */
 router.post("/forgot-password", authLimiter, forgotPasswordLink);
-
-// router.post("/forgot-password", forgotPasswordLink);
-
 router.post("/reset-password/:id/:token", authLimiter, resetPassword);
 
 export default router;
