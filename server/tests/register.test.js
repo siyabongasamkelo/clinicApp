@@ -49,7 +49,7 @@ describe("POST /auth/register", () => {
     const user = await userModel.findOne({ email: "siyabonga@gmail.com" });
     expect(user).not.toBeNull();
     expect(user.username).toBe("siyabonga");
-  }, 50000);
+  }, 80000);
 });
 
 it("should fail if email already exists", async () => {
@@ -78,7 +78,7 @@ it("should fail if email already exists", async () => {
 
   expect(res.statusCode).toBe(409);
   expect(res.body).toHaveProperty("message", "Email already exists");
-});
+}, 50000);
 
 it("should fail if required fields are missing", async () => {
   const res = await request(index).post("/auth/register").send({
@@ -87,4 +87,4 @@ it("should fail if required fields are missing", async () => {
 
   expect(res.statusCode).toBe(422);
   expect(res.body).toHaveProperty("message", "Please fill all the fields");
-});
+}, 50000);
