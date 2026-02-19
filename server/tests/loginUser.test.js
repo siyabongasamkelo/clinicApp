@@ -33,8 +33,8 @@ const bcrypt = (await import("bcrypt")).default;
 const jwt = (await import("jsonwebtoken")).default;
 
 // Import controller as a module object to support both CJS and ESM export styles
-const { userModel } = await import("../models/userModel.js");
 const { loginUser } = await import("../controllers/authController.js");
+const { userModel } = await import("../models/userModel.js");
 
 if (typeof loginUser !== "function") {
   throw new Error(
