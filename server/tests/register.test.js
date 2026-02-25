@@ -76,8 +76,11 @@ it("should fail if email already exists", async () => {
       path.join(__dirname, "mockFiles/profile.jpg"), // path to a real image in your tests
     );
 
+  const rawData = res.text;
+  const data = JSON.parse(rawData);
+
   expect(res.statusCode).toBe(409);
-  expect(res.body).toHaveProperty("message", "Email already exists");
+  expect(data).toHaveProperty("message", "Email already exists");
 }, 50000);
 
 it("should fail if required fields are missing", async () => {
