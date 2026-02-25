@@ -9,7 +9,7 @@ import type {
   RegisterBody,
   LoginBody,
 } from "../types/auth.type.js";
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import type { UploadedFile } from "express-fileupload";
 import validator from "validator";
 import bcrypt from "bcrypt";
@@ -17,7 +17,7 @@ import { userModel } from "../models/userModel.js";
 import type { User } from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
-// import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/ApiError.js";
 
 dotenv.config();
 // helping functions
@@ -72,19 +72,17 @@ const createToken = (id: string): string => {
 export const registerUser = async (
   req: Request<{}, {}, RegisterBody>,
   res: Response,
-): Promise<Response> => {
+  next: NextFunction,
+): Promise<void> => {
+  // 2. Change return type to void since middleware handles response
   try {
     const { email, password, username, role } = req.body;
 
-    // 1. Properly Type the File Upload
-    // We cast req.files to any first to safely check the nested properties
     const files = req.files as any;
     const photoFile = files?.file || files?.photo || files?.profilePhoto;
-
-    // Get the tempFilePath safely
     const photoFilePath = (photoFile as UploadedFile)?.tempFilePath;
 
-    // 2. Basic Validation
+    // 3. Instead of res.status().json(), use next(new ApiError())
     if (
       !username?.trim() ||
       !email?.trim() ||
@@ -92,52 +90,37 @@ export const registerUser = async (
       !role?.trim() ||
       !photoFilePath
     ) {
-      return res.status(422).json({ message: "Please fill all the fields" });
+      return next(new ApiError(422, "Please fill all the fields"));
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedUsername = username.trim();
-
     if (!validator.isEmail(normalizedEmail)) {
-      return res.status(422).json({ message: "Please enter a valid email" });
+      return next(new ApiError(422, "Please enter a valid email"));
     }
 
     if (!validator.isStrongPassword(password)) {
-      return res
-        .status(422)
-        .json({ message: "Please enter a stronger password" });
+      return next(new ApiError(422, "Please enter a stronger password"));
     }
 
     const allowedRoles = ["doctor", "admin", "nurse"];
     if (!allowedRoles.includes(role)) {
-      return res.status(422).json({ message: "Invalid role" });
+      return next(new ApiError(422, "Invalid role"));
     }
 
-    // 3. Database Check
     const userExists = await userModel.findOne({ email: normalizedEmail });
     if (userExists) {
-      return res.status(409).json({ message: "Email already exists" });
+      return next(new ApiError(409, "Email already exists"));
     }
 
-    // 4. Hashing
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 5. Cloudinary Upload
-    let imageLink: string;
-    try {
-      imageLink = await uploadToCloudinary(photoFilePath, "profiles");
-    } catch (uploadErr) {
-      console.error("Cloudinary upload error:", uploadErr);
-      return res
-        .status(500)
-        .json({ message: "An error occurred while uploading your photo" });
-    }
+    // 4. No more nested try/catches! If it fails, catch(err) catches it.
+    const imageLink = await uploadToCloudinary(photoFilePath, "profiles");
 
-    // 6. Create User (TS knows the shape from userModel.ts)
     const createdUser = await userModel.create({
       email: normalizedEmail,
-      username: normalizedUsername,
+      username: username.trim(),
       password: hashedPassword,
       profilePhoto: imageLink,
       role: role.trim(),
@@ -145,7 +128,8 @@ export const registerUser = async (
 
     const newToken = createToken(createdUser._id.toString());
 
-    return res.status(201).json({
+    // 5. Successful responses still use res.status()
+    res.status(201).json({
       message: "User successfully registered",
       user: {
         id: createdUser._id,
@@ -158,30 +142,28 @@ export const registerUser = async (
       },
     });
   } catch (err: any) {
-    console.error("registerUser error:", err);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: err?.message,
-    });
+    // 6. The "Magic" - pass any unexpected error (DB crash, etc.) to the handler
+    next(err);
   }
 };
 
 export const verifyEmailRequest = async (
   req: Request<{}, {}, VerifyEmailRequestBody>,
   res: Response,
-): Promise<Response> => {
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { email } = req.body || {};
 
     // Validate input presence
     if (typeof email !== "string" || !email.trim()) {
-      return res.status(422).json({ message: "Please provide your email." });
+      return next(new ApiError(422, "Please provide your email."));
     }
 
     // Normalize and validate email
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
-      return res.status(422).json({ message: "Please provide a valid email." });
+      return next(new ApiError(422, "Please provide a valid email."));
     }
 
     // Look up the user
@@ -218,10 +200,12 @@ export const verifyEmailRequest = async (
       });
     } catch (emailErr) {
       console.error("Email sending failed:", emailErr);
-      return res.status(502).json({
-        message:
+      return next(
+        new ApiError(
+          502,
           "We couldn't send the verification email. Please try again later.",
-      });
+        ),
+      );
     }
 
     return res.status(200).json({
@@ -237,22 +221,23 @@ export const verifyEmailRequest = async (
 export const verifyEmail = async (
   req: Request<{}, {}, {}, VerifyEmailQuery>,
   res: Response,
-): Promise<Response> => {
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { email, token } = req.query || {};
 
     // Validate input presence
     if (typeof email !== "string" || !email.trim()) {
-      return res.status(422).json({ message: "Please provide your email." });
+      return next(new ApiError(422, "Please provide your email."));
     }
     if (typeof token !== "string" || !token.trim()) {
-      return res.status(422).json({ message: "Please provide your token." });
+      return next(new ApiError(422, "Please provide your token."));
     }
 
     // Normalize and validate email
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
-      return res.status(422).json({ message: "Please provide a valid email." });
+      return next(new ApiError(422, "Please provide a valid email."));
     }
 
     // Look up the user
@@ -261,7 +246,7 @@ export const verifyEmail = async (
 
     // If you prefer to avoid user enumeration, do not reveal existence
     if (!user) {
-      return res.status(404).json({ message: "User not found." });
+      return next(new ApiError(404, "User not found."));
     }
 
     // Verify token
@@ -295,22 +280,26 @@ export const verifyEmail = async (
 export const loginUser = async (
   req: Request<{}, {}, LoginBody>,
   res: Response,
-): Promise<Response> => {
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { email, password } = req.body || {};
 
     // Validate input presence
     if (typeof email !== "string" || !email.trim()) {
-      return res.status(422).json({ message: "Please provide your email." });
+      // return res.status(422).json({ message: "Please provide your email." });
+      return next(new ApiError(422, "Please provide your email."));
     }
     if (typeof password !== "string" || !password.trim()) {
-      return res.status(422).json({ message: "Please provide your password." });
+      // return res.status(422).json({ message: "Please provide your password." });
+      return next(new ApiError(422, "Please provide your password."));
     }
 
     // Normalize and validate email
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
-      return res.status(422).json({ message: "Please provide a valid email." });
+      // return res.status(422).json({ message: "Please provide a valid email." });
+      return next(new ApiError(422, "Please provide a valid email."));
     }
 
     // Look up the user
@@ -319,17 +308,20 @@ export const loginUser = async (
 
     // If you prefer to avoid user enumeration, do not reveal existence
     if (!user) {
-      return res.status(404).json({ message: "User not found." });
+      // return res.status(404).json({ message: "User not found." });
+      return next(new ApiError(404, "User not found."));
     }
 
     if (user.isVerified === "false") {
-      return res.status(401).json({ message: "Please verify your email." });
+      // return res.status(401).json({ message: "Please verify your email." });
+      return next(new ApiError(401, "Please verify your email."));
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      // return res.status(401).json({ message: "Invalid email or password." });
+      return next(new ApiError(401, "Invalid email or password."));
     }
 
     // Create and send token
@@ -349,24 +341,28 @@ export const loginUser = async (
     });
   } catch (err) {
     console.error("User login error:", err);
-    return res.status(500).json({ message: "An unexpected error occurred." });
+    // return res.status(500).json({ message: "An unexpected error occurred." });
+    return next(new ApiError(500, "An unexpected error occurred."));
   }
 };
 
 export const forgotPasswordLink = async (
   req: Request<{}, {}, ForgotPasswordLinkBody>,
   res: Response,
-): Promise<Response> => {
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { email } = req.body;
     // Validate email input
     if (!email) {
-      return res.status(400).json({ message: "Email is required." });
+      // return res.status(400).json({ message: "Email is required." });
+      return next(new ApiError(400, "Email is required."));
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
-      return res.status(422).json({ message: "Please provide a valid email." });
+      // return res.status(422).json({ message: "Please provide a valid email." });
+      return next(new ApiError(422, "Please provide a valid email."));
     }
 
     // Find user
@@ -374,9 +370,8 @@ export const forgotPasswordLink = async (
     user = await userModel.findOne({ normalizedEmail });
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "No account found with that email." });
+      // return res.status(404).json({ message: "No account found with that email." });
+      return next(new ApiError(404, "No account found with that email."));
     }
 
     // Create a temporary secret for the JWT
@@ -415,44 +410,50 @@ export const forgotPasswordLink = async (
       .json({ success: true, message: "Reset link sent to email." });
   } catch (error) {
     console.error("Forgot Password Error:", error);
-    res.status(500).json({ message: "Internal server error." });
+    // res.status(500).json({ message: "Internal server error." });
+    return next(new ApiError(500, "Internal server error."));
   }
 };
 
 export const resetPassword = async (
   req: Request<ResetPasswordParams, {}, ResetPasswordBody, {}>,
   res: Response,
-): Promise<Response> => {
+  next: NextFunction,
+): Promise<void> => {
   const { id, token } = req.params;
   const { email, password } = req.body;
 
   try {
     // Basic Input Validation
     if (!email || !password || !token) {
-      return res.status(400).json({ message: "All fields are required." });
+      // return res.status(400).json({ message: "All fields are required." });
+      return next(new ApiError(400, "All fields are required."));
     }
 
     // Email Format Validation
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
-      return res.status(422).json({ message: "Invalid email format." });
+      // return res.status(422).json({ message: "Invalid email format." });
+      return next(new ApiError(422, "Invalid email format."));
     }
 
     // Password Strength Check
     if (!validator.isStrongPassword(password)) {
-      return res.status(422).json({
-        message:
+      // return res.status(422).json({message:"Password is too weak. Must be 8+ chars with uppercase, lowercase, numbers, and symbols.",});
+      return next(
+        new ApiError(
+          422,
           "Password is too weak. Must be 8+ chars with uppercase, lowercase, numbers, and symbols.",
-      });
+        ),
+      );
     }
 
     // Find User & Reconstruct Dynamic Secret
     let user: User | null;
     user = await userModel.findById(id);
     if (!user || user.email !== normalizedEmail) {
-      return res
-        .status(404)
-        .json({ message: "User not found or email mismatch." });
+      // return res.status(404).json({ message: "User not found or email mismatch." });
+      return next(new ApiError(404, "User not found or email mismatch."));
     }
 
     // Secret must match exactly what was used in forgotPasswordLink
