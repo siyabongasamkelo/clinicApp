@@ -8,7 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import authRoutes from "./routes/authRoutes.js"; // Keep .js extension for ESM/TS
 import { swaggerSpec } from "./config/swagger.js";
 import helmet from "helmet";
-import { globalErrorHandler } from "./middleware/errorMiddleware.js";
+import { errorMiddleware } from "./middleware/errorMiddleware.ts";
 // Initialize the app with the Application type
 const app: Application = express();
 
@@ -39,6 +39,6 @@ app.use("/auth", authRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //error middleware
-app.use(globalErrorHandler);
+app.use(errorMiddleware);
 
 export default app;

@@ -2,7 +2,9 @@ import dotenv from "dotenv";
 import index from "./index.ts";
 import mongoose from "mongoose";
 import dns from "node:dns";
+import logger from "./utils/logger.js";
 
+logger.info("Checking Winston: The ClinicApp is live!");
 dotenv.config({ quiet: true });
 
 // Cloudinary/MongoDB often have DNS issues on some networks; this helps.

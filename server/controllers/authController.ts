@@ -18,6 +18,7 @@ import type { User } from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import { ApiError } from "../utils/ApiError.js";
+import logger from "../utils/logger.js";
 
 dotenv.config();
 // helping functions
@@ -326,6 +327,8 @@ export const loginUser = async (
 
     // Create and send token
     const token = createToken(user._id.toString());
+
+    logger.info(`User logged in: ${user.email}`);
 
     return res.status(201).json({
       message: "User logged in successfully",

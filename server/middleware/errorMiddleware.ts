@@ -1,16 +1,15 @@
-export const globalErrorHandler = (
-  err: any,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+import logger from "../utils/logger.js";
+
+export const errorMiddleware = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;
-  // Ensure 'message' is being pulled from the error object
-  const message = err.message || "Internal Server Error";
+
+  // 🚀 Instead of console.error, use Winston!
+  logger.error(
+    `${statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`,
+  );
 
   res.status(statusCode).json({
     success: false,
-    message: message,
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    message: err.message || "Internal Server Error",
   });
 };
