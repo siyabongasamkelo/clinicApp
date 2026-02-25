@@ -49,7 +49,10 @@ const mockReqRes = (body = {}) => {
     status: jest.fn().mockReturnThis(),
     json: jest.fn(),
   };
-  return { req, res };
+
+  const next = jest.fn();
+
+  return { req, res, next };
 };
 
 const mockUserDoc = (overrides = {}) => ({
@@ -72,66 +75,117 @@ afterEach(() => {
 
 describe("loginUser", () => {
   test("returns 422 when email is missing", async () => {
-    const { req, res } = mockReqRes({ password: "password123" });
+    const { req, res, next } = mockReqRes({ password: "password123" });
 
-    await loginUser(req, res);
+    await loginUser(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(422);
-    const payload = res.json.mock.calls[0][0];
-    const msg = payload?.message ?? payload?.error ?? "";
-    expect(String(msg).toLowerCase()).toContain("email");
+    console.log("WHAT HAPPENED:", next.mock.calls[0][0]);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 422,
+      }),
+    );
+
+    const errorSentToNext = next.mock.calls[0][0];
+
+    expect(errorSentToNext.statusCode).toBe(422);
+    expect(errorSentToNext.message).toContain("email");
+
+    //old code
+    // expect(res.status).toHaveBeenCalledWith(422);
+    // const payload = res.json.mock.calls[0][0];
+    // const msg = payload?.message ?? payload?.error ?? "";
+    // expect(String(msg).toLowerCase()).toContain("email");
   });
 
   test("returns 422 when email is invalid format (if validated)", async () => {
-    const { req, res } = mockReqRes({
+    const { req, res, next } = mockReqRes({
       email: "not-an-email",
       password: "password123",
     });
 
-    await loginUser(req, res);
+    await loginUser(req, res, next);
 
-    const statusCode = res.status.mock.calls[0]?.[0];
-    expect(statusCode).toBe(422);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 422,
+      }),
+    );
 
-    const payload = res.json.mock.calls[0][0];
-    const msg = payload?.message ?? payload?.error ?? "";
-    expect(typeof msg).toBe("string");
+    const errorSentToNext = next.mock.calls[0][0];
+
+    expect(errorSentToNext.statusCode).toBe(422);
+    expect(errorSentToNext.message).toContain("email");
+
+    //old code
+    // const statusCode = res.status.mock.calls[0]?.[0];
+    // expect(statusCode).toBe(422);
+
+    // const payload = res.json.mock.calls[0][0];
+    // const msg = payload?.message ?? payload?.error ?? "";
+    // expect(typeof msg).toBe("string");
   });
 
   test("returns 422 when password is missing or empty", async () => {
-    const { req, res } = mockReqRes({
+    const { req, res, next } = mockReqRes({
       email: "user@example.com",
       password: "",
     });
 
-    await loginUser(req, res);
+    await loginUser(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(422);
-    const payload = res.json.mock.calls[0][0];
-    const msg = payload?.message ?? payload?.error ?? "";
-    expect(String(msg).toLowerCase()).toContain("password");
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 422,
+      }),
+    );
+
+    const errorSentToNext = next.mock.calls[0][0];
+
+    expect(errorSentToNext.statusCode).toBe(422);
+    expect(errorSentToNext.message).toContain("password");
+
+    //old code
+    // expect(res.status).toHaveBeenCalledWith(422);
+    // const payload = res.json.mock.calls[0][0];
+    // const msg = payload?.message ?? payload?.error ?? "";
+    // expect(String(msg).toLowerCase()).toContain("password");
   });
 
   test("returns 404 when user does not exist", async () => {
-    const { req, res } = mockReqRes({
+    const { req, res, next } = mockReqRes({
       email: "nouser@example.com",
       password: "password123",
     });
 
     userModel.findOne.mockResolvedValueOnce(null);
 
-    await loginUser(req, res);
+    await loginUser(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 404,
+      }),
+    );
+
+    const errorSentToNext = next.mock.calls[0][0];
+
+    expect(errorSentToNext.statusCode).toBe(404);
+    // expect(errorSentToNext.message).toContain("password");
 
     // Controller normalizes email to lowercase; keep expectation simple
-    expect(userModel.findOne).toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(404);
-    const payload = res.json.mock.calls[0][0];
-    const msg = payload?.message ?? payload?.error ?? "";
-    expect(typeof msg).toBe("string");
+    //old code
+    // expect(next).toHaveBeenCalled();
+    // expect(userModel.findOne).toHaveBeenCalled();
+    // expect(res.status).toHaveBeenCalledWith(404);
+    // const payload = res.json.mock.calls[0][0];
+    // const msg = payload?.message ?? payload?.error ?? "";
+    // expect(typeof msg).toBe("string");
   });
 
   test("returns 401 when password does not match", async () => {
-    const { req, res } = mockReqRes({
+    const { req, res, next } = mockReqRes({
       email: "user@example.com",
       password: "wrongpassword",
     });
@@ -139,18 +193,28 @@ describe("loginUser", () => {
     userModel.findOne.mockResolvedValueOnce(mockUserDoc());
     bcrypt.compare.mockResolvedValueOnce(false);
 
-    await loginUser(req, res);
+    await loginUser(req, res, next);
 
+    expect(next).toHaveBeenCalled();
     expect(userModel.findOne).toHaveBeenCalled();
     expect(bcrypt.compare).toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
-    const payload = res.json.mock.calls[0][0];
-    const msg = payload?.message ?? payload?.error ?? "";
-    expect(String(msg).toLowerCase()).toMatch(/invalid|incorrect|password/);
+
+    const errorSentToNext = next.mock.calls[0][0];
+
+    expect(errorSentToNext.statusCode).toBe(401);
+    expect(String(errorSentToNext.message).toLowerCase()).toMatch(
+      /invalid|incorrect|password/,
+    );
+
+    //oldcode
+    // expect(res.status).toHaveBeenCalledWith(401);
+    // const payload = res.json.mock.calls[0][0];
+    // const msg = payload?.message ?? payload?.error ?? "";
+    // expect(String(msg).toLowerCase()).toMatch(/invalid|incorrect|password/);
   });
 
   test("returns 201 and token on successful login", async () => {
-    const { req, res } = mockReqRes({
+    const { req, res, next } = mockReqRes({
       email: "user@example.com",
       password: "correctPassword",
     });
@@ -160,18 +224,17 @@ describe("loginUser", () => {
     bcrypt.compare.mockResolvedValueOnce(true);
     jwt.sign.mockReturnValueOnce("mock.jwt.token");
 
-    await loginUser(req, res);
+    await loginUser(req, res, next);
 
     expect(userModel.findOne).toHaveBeenCalled();
     expect(bcrypt.compare).toHaveBeenCalledWith(
       "correctPassword",
       userDoc.password,
     );
-
-    // Controller sends 201 on success according to current implementation
     expect(res.status).toHaveBeenCalledWith(201);
 
     const payload = res.json.mock.calls[0][0];
+    expect(payload.user).toHaveProperty("token");
 
     // Your controller responds with a nested user object and token inside user
     if (payload?.user?.token) {
@@ -190,18 +253,26 @@ describe("loginUser", () => {
   });
 
   test("handles unexpected errors with 500", async () => {
-    const { req, res } = mockReqRes({
+    const { req, res, next } = mockReqRes({
       email: "user@example.com",
       password: "pw",
     });
 
     userModel.findOne.mockRejectedValueOnce(new Error("DB down"));
 
-    await loginUser(req, res);
+    await loginUser(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    const payload = res.json.mock.calls[0][0];
-    const msg = payload?.message ?? payload?.error ?? "";
-    expect(typeof msg).toBe("string");
+    expect(next).toHaveBeenCalled();
+
+    //old code
+    // expect(res.status).toHaveBeenCalledWith(500);
+    // const payload = res.json.mock.calls[0][0];
+    // const msg = payload?.message ?? payload?.error ?? "";
+    // expect(typeof msg).toBe("string");
+
+    const errorSentToNext = next.mock.calls[0][0];
+
+    expect(errorSentToNext.statusCode).toBe(500);
+    expect(errorSentToNext.message).toContain("unexpected");
   });
 });
