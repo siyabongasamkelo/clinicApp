@@ -7,20 +7,18 @@ const appointmentSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Patient ID is required"],
     },
+    appointmentDate: { type: Date, required: true }, // e.g., 2024-06-15
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Assuming Doctors are also in the User table with a 'doctor' role
       required: [true, "Doctor ID is required"],
     },
     // The start of the 1.5h block (e.g., 2024-06-10T04:00:00Z)
-    startTime: {
-      type: Date,
-      required: [true, "Appointment start time is required"],
-    },
-    // We calculate endTime automatically (startTime + 1.5 hours)
-    endTime: {
-      type: Date,
+    sessionId: {
+      type: Number,
       required: true,
+      min: 1,
+      max: 10,
     },
     status: {
       type: String,
@@ -41,12 +39,11 @@ const appointmentSchema = new mongoose.Schema(
 );
 
 // Middleware to auto-calculate endTime before saving
-appointmentSchema.pre("save", function (next) {
+appointmentSchema.pre("save", async function (next) {
   if (this.startTime) {
     // Adding 90 minutes (1.5 hours)
     this.endTime = new Date(this.startTime.getTime() + 90 * 60000);
   }
-  next();
 });
 
 export const Appointment = mongoose.model("Appointment", appointmentSchema);

@@ -9,6 +9,7 @@ import authRoutes from "./routes/authRoutes.js"; // Keep .js extension for ESM/T
 import { swaggerSpec } from "./config/swagger.js";
 import helmet from "helmet";
 import { errorMiddleware } from "./middleware/errorMiddleware.ts";
+import appointmentRoutes from "./routes/appointmentRoutes.js";
 // Initialize the app with the Application type
 const app: Application = express();
 
@@ -34,6 +35,7 @@ app.use(fileupload({ useTempFiles: true }));
 
 // Routes
 app.use("/auth", authRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

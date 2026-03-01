@@ -17,8 +17,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      required: true,
-      enum: ["doctor", "nurse", "admin"],
+      enum: ["admin", "nurse", "doctor", "patient"],
+      default: "patient",
     },
     profilePhoto: {
       type: String,
@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema(
       enum: ["true", "false"],
       default: "false",
     },
+    medicalHistorySummary: { type: String },
   },
   {
     timestamps: true,
