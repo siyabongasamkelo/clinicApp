@@ -19,7 +19,7 @@ import {
 } from "@jest/globals";
 
 // Then, if you need the type in your file, use it like this:
-// type User = mongoose.InferSchemaType<typeof userSchema>;
+type User = mongoose.InferSchemaType<typeof userSchema>;
 
 // 1. Mock Cloudinary using a plain JS function to avoid the 'as any' syntax error
 jest.mock("cloudinary", () => {

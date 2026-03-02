@@ -1,18 +1,13 @@
-import { createDefaultEsmPreset } from "ts-jest";
-
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-const esmPreset = createDefaultEsmPreset();
-
 export default {
-  ...esmPreset, // This "spreads" all the ESM settings into this config
+  preset: "ts-jest/presets/default-esm",
   testEnvironment: "node",
   extensionsToTreatAsEsm: [".ts"],
   moduleNameMapper: {
-    // This is the magic fix for the ".js" extension error
-    "^(\\.{1,2}/.*)\\.js$": "$1",
+    // This regex maps any local import ending in .js to its .ts equivalent
+    "^(\\.\\.?\\/.*)\\.js$": "$1",
   },
   transform: {
-    // This tells Jest to use ts-jest for all .ts files
     "^.+\\.tsx?$": [
       "ts-jest",
       {

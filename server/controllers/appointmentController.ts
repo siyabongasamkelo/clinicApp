@@ -1,11 +1,14 @@
-import { Response, NextFunction } from "express";
+import express from "express";
+// Using 'import type' ensures Jest doesn't look for these in the Express JS code
+import type { Request, Response, NextFunction } from "express";
+
 import { Appointment } from "../models/appointmentModel.js";
 import { SESSION_MAP, CLINIC_CONFIG } from "../config/clinicConfig.js";
 import logger from "../utils/logger.js";
-import {
+import type {
   CreateAppointmentRequest,
   UpdateStatusRequest,
-} from "../types/appointment.js";
+} from "../types/appointments.type.js";
 import { userModel } from "../models/userModel.js";
 import { ApiError } from "../utils/ApiError.js";
 

@@ -9,7 +9,11 @@ import type {
   RegisterBody,
   LoginBody,
 } from "../types/auth.type.js";
-import type { NextFunction, Request, Response } from "express";
+
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
+
+// import type { NextFunction, Request, Response } from "express";
 import type { UploadedFile } from "express-fileupload";
 import validator from "validator";
 import bcrypt from "bcrypt";

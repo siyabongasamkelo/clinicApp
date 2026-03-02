@@ -42,3 +42,7 @@ export interface ResetPasswordBody {
   email?: string;
   password?: string;
 }
+
+export interface UserPayload {
+  id: string;
+}

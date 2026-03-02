@@ -1,14 +1,23 @@
-import dotenv from "dotenv";
+import express from "express"; // Runtime engine
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+// 1. Separate the "Blueprints" (Types) so Node doesn't look for them at runtime
+import type { Request, Response, NextFunction } from "express";
+import type { UserPayload } from "../types/auth.type.js";
 
 dotenv.config();
 
+/**
+ * We use 'express.Request' to ensure the ESM linker doesn't break.
+ * We use 'UserPayload' as a type-only import to avoid the "module not found" error.
+ */
 export const protect = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction,
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
 ) => {
-  let token;
+  let token: string | undefined;
 
   // 1. Extract Token
   if (
@@ -18,14 +27,14 @@ export const protect = async (
     token = req.headers.authorization.split(" ")[1];
   }
 
-  // 2. If no token found, stop immediately
+  // 2. If no token found
   if (!token) {
     return res.status(401).json({ message: "Not authorized, no token" });
   }
 
   try {
-    // 3. Verify Token (Synchronous style for cleaner flow)
-    // DOUBLE CHECK: Is it JWT_SECRETE_KEY or JWT_SECRET_KEY in your .env?
+    // 3. Verify Token
+    // Note: Ensure your .env matches JWT_SECRETE_KEY (with the 'E' at the end)
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRETE_KEY as string,
