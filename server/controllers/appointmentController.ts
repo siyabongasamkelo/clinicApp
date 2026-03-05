@@ -1,5 +1,4 @@
 import express from "express";
-// Using 'import type' ensures Jest doesn't look for these in the Express JS code
 import type { Request, Response, NextFunction } from "express";
 
 import { Appointment } from "../models/appointmentModel.js";
@@ -21,7 +20,6 @@ export const createAppointment = async (
     const patientId = req.user?.id;
     const { appointmentDate, sessionId, reason } = req.body;
 
-    // TypeScript now knows 'sessionId' is a number!
     const validSession = SESSION_MAP.find((s) => s.id === sessionId);
     if (!validSession) {
       //   return res.status(400).json({ message: "Invalid session." });
