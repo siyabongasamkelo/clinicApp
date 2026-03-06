@@ -3,6 +3,7 @@ import { loginSchema } from "../schemas/auth.schema";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { notify } from "../utils/toast";
 
 export const useLoginForm = () => {
   const { login } = useAuth();
@@ -10,15 +11,18 @@ export const useLoginForm = () => {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const formik = useFormik({
-    initialValues: { staffId: "", password: "" },
+    initialValues: { email: "", password: "" },
     validationSchema: loginSchema,
-    onSubmit: async (values) => {
+    onSubmit: async (values, { setSubmitting }) => {
       try {
         setServerError(null);
-        await login({ username: values.staffId, password: values.password });
-        navigate("/dashboard");
+        await login({ email: values.email, password: values.password });
+        notify.success(`Successfully logged in!`);
+        setSubmitting(false);
+        // navigate("/dashboard");
       } catch (err: any) {
         setServerError(err.response?.data?.message || "Authentication failed");
+        notify.error(err.response?.data?.message || "Login failed");
       }
     },
   });
