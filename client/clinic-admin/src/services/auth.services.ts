@@ -5,8 +5,9 @@ export const AuthService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
       const response = await api.post("/auth/login", credentials);
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+
+      if (response.data.user.token) {
+        localStorage.setItem("token", response.data.user.token);
         // Save user object for quick access
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
