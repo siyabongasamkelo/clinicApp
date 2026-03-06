@@ -5,6 +5,8 @@ import App from "./App";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "./theme";
 import { AuthProvider } from "./context/AuthContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Add these if you installed @fontsource/roboto
 import "@fontsource/roboto/300.css";
@@ -15,6 +17,15 @@ import "@fontsource/roboto/700.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <ThemeProvider theme={theme}>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        theme="colored"
+      />
       <CssBaseline />
       <AuthProvider>
         <App />
