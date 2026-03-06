@@ -8,6 +8,8 @@ import {
   Paper,
   Link,
   Divider,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useLoginForm } from "../hooks/useLoginForm";
@@ -47,14 +49,30 @@ function LoginPage() {
               Internal Staff Access Only
             </Typography>
 
-            <form>
-              <TextField fullWidth label="Staff ID" margin="normal" required />
+            <form onSubmit={formik.handleSubmit}>
+              {serverError && <Alert severity="error">{serverError}</Alert>}
+
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                margin="normal"
+                required
+                {...formik.getFieldProps("email")}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+              />
               <TextField
                 fullWidth
                 label="Password"
                 type="password"
                 margin="normal"
                 required
+                {...formik.getFieldProps("password")}
+                error={
+                  formik.touched.password && Boolean(formik.errors.password)
+                }
+                helperText={formik.touched.password && formik.errors.password}
               />
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
@@ -75,6 +93,7 @@ function LoginPage() {
                 type="submit"
                 variant="contained"
                 size="large"
+                disabled={formik.isSubmitting}
                 sx={{
                   mt: 4,
                   py: 1.5,
@@ -82,7 +101,13 @@ function LoginPage() {
                   fontSize: "1rem",
                 }}
               >
-                Login
+                {formik.isSubmitting ? (
+                  <div className="spinner">
+                    <CircularProgress size={20} color="inherit" />
+                  </div>
+                ) : (
+                  "Login"
+                )}
               </Button>
 
               <Divider sx={{ my: 3 }}>OR</Divider>
