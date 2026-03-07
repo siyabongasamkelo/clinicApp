@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-// Import your components (we will create these files next)
 import LoginPage from "./pages/LoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
 

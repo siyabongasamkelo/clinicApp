@@ -38,7 +38,7 @@ function LoginPage() {
               align="center"
               fontWeight="bold"
             >
-              Clinic Portal
+              Impilo Clinic Portal
             </Typography>
             <Typography
               variant="body2"
