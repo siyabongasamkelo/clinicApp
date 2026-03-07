@@ -18,6 +18,20 @@ export const AuthService = {
     }
   },
 
+  register: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    try {
+      const response = await api.post("/auth/register", credentials);
+
+      if (response.data.message === "User successfully registered") {
+        console.log("User registered successfuly");
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Register failed:", error);
+      throw error; // Let the UI handle the error message
+    }
+  },
+
   // NEW: Retrieves user from storage or API
   getCurrentUser: () => {
     try {
