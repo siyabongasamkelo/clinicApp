@@ -11,6 +11,7 @@ import { AuthService } from "../services/auth.services";
 interface AuthContextType {
   user: any | null;
   login: (credentials: any) => Promise<void>;
+  register: (credentials: any) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -35,13 +36,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user); // Update global state with the user from response
   };
 
+  const register = async (credentials: any) => {
+    const data = await AuthService.register(credentials);
+    setUser(data.user); // Update global state with the user from response
+  };
+
   const logout = () => {
     AuthService.logout();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, register, loading }}>
       {children}
     </AuthContext.Provider>
   );
