@@ -1,12 +1,14 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import RegisterPage from "./pages/RegisterPage";
 
 function App() {
   return (
     <Routes>
       {/* Public Route */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
       {/* Private/Admin Route (Placeholder) */}
       <Route path="/admin" element={<AdminDashboard />} />
