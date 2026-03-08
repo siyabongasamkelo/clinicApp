@@ -32,11 +32,11 @@ function LoginPage() {
         >
           <Paper elevation={4} sx={{ p: 4, width: "100%", borderRadius: 3 }}>
             <Typography
-              variant="h4"
               component="h1"
+              variant="h5"
+              color="primary"
               gutterBottom
               align="center"
-              fontWeight="bold"
             >
               Impilo Clinic Portal
             </Typography>
