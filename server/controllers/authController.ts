@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import sendEmail from "../utils/sendEmail.js";
 import type {
   VerifyEmailRequestBody,
-  VerifyEmailQuery,
+  VerifyEmailBody,
   ForgotPasswordLinkBody,
   ResetPasswordBody,
   ResetPasswordParams,
@@ -188,7 +188,9 @@ export const verifyEmailRequest = async (
     const token = createToken(user._id.toString());
 
     // Build verification link
-    const baseUrl = process.env.BASEURL?.replace(/\/+$/, "") || "";
+    // const baseUrl = process.env.BASEURL?.replace(/\/+$/, "") || "";
+    const baseUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "") || "";
+
     const verificationLink = `${baseUrl}/auth/confirmemail?email=${encodeURIComponent(
       normalizedEmail,
     )}&token=${encodeURIComponent(token)}`;
@@ -224,12 +226,12 @@ export const verifyEmailRequest = async (
 };
 
 export const verifyEmail = async (
-  req: Request<{}, {}, {}, VerifyEmailQuery>,
+  req: Request<{}, {}, VerifyEmailBody>,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { email, token } = req.query || {};
+    const { email, token } = req.body || {};
 
     // Validate input presence
     if (typeof email !== "string" || !email.trim()) {
@@ -390,7 +392,7 @@ export const forgotPasswordLink = async (
     });
 
     // Create the Link
-    const baseUrl = process.env.BASEURL?.replace(/\/+$/, "") || "";
+    const baseUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "") || "";
     const resetUrl = `${baseUrl}/auth/reset-password/${user._id}/${token}`;
 
     // Define the Email Content
@@ -423,16 +425,16 @@ export const forgotPasswordLink = async (
 };
 
 export const resetPassword = async (
-  req: Request<ResetPasswordParams, {}, ResetPasswordBody, {}>,
+  req: Request<{}, {}, ResetPasswordBody, {}>,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const { id, token } = req.params;
-  const { email, password } = req.body;
+  // const { id, token } = req.params;
+  const { email, password, id, token } = req.body;
 
   try {
     // Basic Input Validation
-    if (!email || !password || !token) {
+    if (!email || !password || !token || !id) {
       // return res.status(400).json({ message: "All fields are required." });
       return next(new ApiError(400, "All fields are required."));
     }
