@@ -12,6 +12,10 @@ interface AuthContextType {
   user: any | null;
   login: (credentials: any) => Promise<void>;
   register: (credentials: any) => Promise<void>;
+  verifyEmailRequest: (credentials: any) => Promise<void>;
+  verifyEmail: (credentials: any) => Promise<void>;
+  forgotPassword: (credentials: any) => Promise<void>;
+  resetPassword: (credentials: any) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -41,13 +45,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user); // Update global state with the user from response
   };
 
+  const verifyEmailRequest = async (credentials: any) => {
+    const data = await AuthService.verifyEmailRequest(credentials);
+    setUser(data.user); // Update global state with the user from response
+  };
+
+  const verifyEmail = async (credentials: any) => {
+    const data = await AuthService.verifyEmail(credentials);
+    setUser(data.user); // Update global state with the user from response
+  };
+
+  const forgotPassword = async (credentials: any) => {
+    const data = await AuthService.forgotPassword(credentials);
+    setUser(data.user); // Update global state with the user from response
+  };
+
+  const resetPassword = async (credentials: any) => {
+    const data = await AuthService.resetPassword(credentials);
+    setUser(data.user); // Update global state with the user from response
+  };
+
   const logout = () => {
     AuthService.logout();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        register,
+        verifyEmailRequest,
+        verifyEmail,
+        forgotPassword,
+        resetPassword,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
