@@ -4,12 +4,14 @@ import {
   Typography,
   TextField,
   Button,
-  MenuItem,
   Paper,
   Alert,
+  Link,
+  Divider,
   CircularProgress,
 } from "@mui/material";
 import { useRegisterForm } from "../hooks/userRegisterForm";
+import { Link as RouterLink } from "react-router-dom";
 
 const RegisterPage: React.FC = () => {
   const { formik, serverError } = useRegisterForm();
@@ -158,6 +160,23 @@ const RegisterPage: React.FC = () => {
                   "Register"
                 )}
               </Button>
+
+              <Divider sx={{ my: 3 }}>OR</Divider>
+
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <Typography variant="body2" sx={{ mr: 0.5 }}>
+                  Already have an account?
+                </Typography>
+                <Link
+                  component={RouterLink}
+                  to="/login"
+                  variant="body2"
+                  fontWeight="bold"
+                  sx={{ textDecoration: "none" }}
+                >
+                  Login now
+                </Link>
+              </Box>
             </form>
           </Box>
         </Paper>
