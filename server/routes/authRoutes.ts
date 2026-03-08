@@ -42,7 +42,7 @@ const router = express.Router();
 router.post("/register", authLimiter, registerUser);
 
 router.post("/verify-email-request", authLimiter, verifyEmailRequest);
-router.get("/confirmemail", authLimiter, verifyEmail);
+router.post("/confirmemail", authLimiter, verifyEmail);
 router.post("/login", authLimiter, loginUser);
 
 /**
@@ -64,6 +64,6 @@ router.post("/login", authLimiter, loginUser);
  *         description: Reset link sent successfully
  */
 router.post("/forgot-password", authLimiter, forgotPasswordLink);
-router.post("/reset-password/:id/:token", authLimiter, resetPassword);
+router.post("/reset-password", authLimiter, resetPassword);
 
 export default router;
