@@ -5,7 +5,7 @@ const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png"];
 export const loginSchema = Yup.object({
   email: Yup.string()
     .required("Email is required")
-    .email("Invalid email format"), // Built-in Yup email validation
+    .email("Invalid email format"),
   password: Yup.string()
     .required("Password is required")
     .min(6, "Password must be at least 6 characters"),
@@ -45,5 +45,12 @@ export const registerSchema = Yup.object().shape({
     .required("Role is required"),
 });
 
+export const verifyEmailRequestSchema = Yup.object({
+  email: Yup.string()
+    .required("Email is required")
+    .email("Invalid email format"),
+});
+
+export type VerifyEmailRequest = Yup.InferType<typeof verifyEmailRequestSchema>;
 export type LoginSchemaType = Yup.InferType<typeof loginSchema>;
 export type RegisterSchemaType = Yup.InferType<typeof registerSchema>;
