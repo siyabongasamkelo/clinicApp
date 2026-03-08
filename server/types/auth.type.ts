@@ -28,7 +28,7 @@ export interface LoginBody {
   password?: string;
 }
 
-export interface VerifyEmailQuery {
+export interface VerifyEmailBody {
   email?: string;
   token?: string;
 }
@@ -41,6 +41,8 @@ export interface ForgotPasswordLinkBody {
 export interface ResetPasswordBody {
   email?: string;
   password?: string;
+  id?: string;
+  token?: string;
 }
 
 export interface UserPayload {
