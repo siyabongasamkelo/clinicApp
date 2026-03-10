@@ -11,7 +11,7 @@ const appointmentSchema = new mongoose.Schema(
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Assuming Doctors are also in the User table with a 'doctor' role
-      required: [true, "Doctor ID is required"],
+      // required: [true, "Doctor ID is required"],
     },
     // The start of the 1.5h block (e.g., 2024-06-10T04:00:00Z)
     sessionId: {

@@ -2,7 +2,10 @@ import api from "../api/axios.config";
 import type {
   LoginCredentials,
   AuthResponse,
-  VerifyEmailRequest,
+  VerifyEmailRequestCredentials,
+  RegisterCredentials,
+  VerifyEmailCredentials,
+  ResetPasswordCredentials,
 } from "../types/auth.type";
 
 export const AuthService = {
@@ -22,7 +25,7 @@ export const AuthService = {
     }
   },
 
-  register: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
     try {
       const response = await api.post("/auth/register", credentials);
 
@@ -37,7 +40,7 @@ export const AuthService = {
   },
 
   verifyEmailRequest: async (
-    credentials: VerifyEmailRequest,
+    credentials: VerifyEmailRequestCredentials,
   ): Promise<AuthResponse> => {
     try {
       const response = await api.post(
@@ -59,7 +62,7 @@ export const AuthService = {
   },
 
   verifyEmail: async (
-    credentials: VerifyEmailRequest,
+    credentials: VerifyEmailCredentials,
   ): Promise<AuthResponse> => {
     try {
       const response = await api.post("/auth/forgot-password", credentials);
@@ -75,7 +78,7 @@ export const AuthService = {
   },
 
   forgotPassword: async (
-    credentials: VerifyEmailRequest,
+    credentials: VerifyEmailRequestCredentials,
   ): Promise<AuthResponse> => {
     try {
       const response = await api.post("/auth/forgot-password", credentials);
@@ -91,7 +94,7 @@ export const AuthService = {
   },
 
   resetPassword: async (
-    credentials: LoginCredentials,
+    credentials: ResetPasswordCredentials,
   ): Promise<AuthResponse> => {
     try {
       const response = await api.post("/auth/reset-password", credentials);

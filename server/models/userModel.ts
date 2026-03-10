@@ -42,16 +42,7 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-// type UserData = InferSchemaType<typeof userSchema>;
+
 export type User = mongoose.InferSchemaType<typeof userSchema>;
 
-// 1. Extract the Type so other files can use it: import { User } from '...'
-// export type User = InferSchemaType<typeof userSchema>;
-
-// export interface User extends UserData, Document {}
-
-// 2. Create the Model using that Type
-// const userModel = model<User>("User", userSchema);
 export const userModel = mongoose.model("User", userSchema);
-
-// export { userModel };

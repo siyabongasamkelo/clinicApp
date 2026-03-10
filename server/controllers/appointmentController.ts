@@ -17,7 +17,7 @@ export const createAppointment = async (
   next: NextFunction,
 ) => {
   try {
-    const patientId = req.user?.id;
+    const patientId: string = req.user?.id;
     const { appointmentDate, sessionId, reason } = req.body;
 
     const validSession = SESSION_MAP.find((s) => s.id === sessionId);
@@ -78,6 +78,105 @@ export const updateAppointmentStatus = async (
     }
 
     logger.info(`STATUS_UPDATE: ${id} to ${status}`);
+    return res.status(200).json({ success: true, data: appointment });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAppointmentsByDate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { date } = req.query as { date?: string };
+
+    if (!date) {
+      return next(
+        new ApiError(
+          400,
+          "Missing required 'date' query parameter in format YYYY-MM-DD",
+        ),
+      );
+    }
+
+    const startOfDay = new Date(date);
+    if (isNaN(startOfDay.getTime())) {
+      return next(new ApiError(400, "Invalid date format. Use YYYY-MM-DD"));
+    }
+
+    // Calculate next day for exclusive upper bound
+    const nextDay = new Date(startOfDay);
+    nextDay.setDate(startOfDay.getDate() + 1);
+
+    const appointments = await Appointment.find({
+      appointmentDate: { $gte: startOfDay, $lt: nextDay },
+    }).populate("patientId");
+
+    if (!appointments) {
+      return next(new ApiError(404, "No appointments found."));
+    }
+
+    return res.status(200).json({ success: true, data: appointments });
+  } catch (err) {
+    console.error("GetAppointmentByDate Error:", err);
+    return next(new ApiError(500, "An unexpected error occurred."));
+  }
+};
+
+export const getAllAppointments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const appointments = await Appointment.find().populate("patientId");
+    return res.status(200).json({ success: true, data: appointments });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getSingleAppointment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findById(id).populate("patientId");
+    return res.status(200).json({ success: true, data: appointment });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateSingleAppointment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    return res.status(200).json({ success: true, data: appointment });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteSingleAppointment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findByIdAndDelete(id);
     return res.status(200).json({ success: true, data: appointment });
   } catch (err) {
     next(err);
