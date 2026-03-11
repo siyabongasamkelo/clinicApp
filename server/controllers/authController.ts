@@ -7,8 +7,14 @@ import type {
   ResetPasswordBody,
   ResetPasswordParams,
   RegisterBody,
-  LoginBody,
+  PatientLoginBody,
 } from "../types/auth.type.js";
+
+import type {
+  IPatientResponse,
+  IPatientsResponse,
+  IPatiensstResponse,
+} from "../types/patients.type.js";
 
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
@@ -17,12 +23,14 @@ import type { Request, Response, NextFunction } from "express";
 import type { UploadedFile } from "express-fileupload";
 import validator from "validator";
 import bcrypt from "bcrypt";
-import { userModel } from "../models/userModel.js";
-import type { User } from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import { ApiError } from "../utils/ApiError.js";
 import logger from "../utils/logger.js";
+import { Patient } from "../models/patientModel.js";
+import { Doctor } from "../models/doctorModel.js";
+import { Nurse } from "../models/nurseModel.js";
+import { IDoctor } from "../types/doctor.type.js";
 
 dotenv.config();
 // helping functions
@@ -38,50 +46,15 @@ const createToken = (id: string): string => {
   return jwt.sign({ id }, jwtKey, { expiresIn: "3d" });
 };
 
-// const createTemporalyToken = (id) => {
-//   const jwtKey = process.env.JWT_SECRETE_KEY;
-//   return jwt.sign({ id }, jwtKey, { expiresIn: "15m" });
-// };
-
-// const verifyAndCompareUserId = (token, userId) => {
-//   try {
-//     const jwtKey = process.env.JWT_SECRETE_KEY;
-//     const decodedToken = jwt.verify(token, jwtKey);
-//     const userIdFromToken = decodedToken.id;
-
-//     const tokenExpiry = decodedToken.exp;
-//     if (Date.now() >= tokenExpiry * 1000)
-//       return { valid: false, message: "Token has expired" };
-
-//     if (userIdFromToken === userId)
-//       return {
-//         valid: true,
-//         message: "Token is valid for the specified user",
-//       };
-
-//     if (userIdFromToken !== userId)
-//       return {
-//         valid: false,
-//         message: "Token does not match the specified user",
-//       };
-//   } catch (error) {
-//     return {
-//       valid: false,
-//       message: "Error verifying token: " + error.message,
-//     };
-//   }
-// };
-
-// actual routes controller functions
-
+/*
 export const registerUser = async (
   req: Request<{}, {}, RegisterBody>,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   // 2. Change return type to void since middleware handles response
   try {
-    const { email, password, username, role } = req.body;
+    const { email, password, username } = req.body;
 
     const files = req.files as any;
     const photoFile = files?.file || files?.photo || files?.profilePhoto;
@@ -150,8 +123,34 @@ export const registerUser = async (
     // 6. The "Magic" - pass any unexpected error (DB crash, etc.) to the handler
     next(err);
   }
+}; */
+
+export const registerDoctor = async (
+  req: Request<{}, {}, IDoctor>,
+  res: Response,
+  next: NextFunction,
+) => {
+  // 2. Change return type to void since middleware handles response
+  try {
+    // 1. Upload file (we know it exists because of Zod)
+    const file = req.files!.profilePhoto as any;
+    const photoUrl = await uploadToCloudinary(file.tempFilePath, "doctors");
+
+    // 2. Save to DB
+    const newDoctor = new Doctor({
+      ...req.body,
+      profilePhoto: photoUrl,
+    });
+
+    await newDoctor.save();
+    res.status(201).json({ message: "Doctor created successfully" });
+  } catch (err: any) {
+    // 6. The "Magic" - pass any unexpected error (DB crash, etc.) to the handler
+    next(err);
+  }
 };
 
+/*
 export const verifyEmailRequest = async (
   req: Request<{}, {}, VerifyEmailRequestBody>,
   res: Response,
@@ -160,31 +159,26 @@ export const verifyEmailRequest = async (
   try {
     const { email } = req.body || {};
 
-    // Validate input presence
     if (typeof email !== "string" || !email.trim()) {
       return next(new ApiError(422, "Please provide your email."));
     }
 
-    // Normalize and validate email
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
       return next(new ApiError(422, "Please provide a valid email."));
     }
 
-    // Look up the user
-    let user: User | null;
-    user = await userModel.findOne({ email: normalizedEmail });
+    // Patients verify via email
+    let user: any | null;
+    user = await Patient.findOne({ email: normalizedEmail });
 
-    // If you prefer to avoid user enumeration, do not reveal existence
     if (!user) {
-      // Still respond 200 to avoid leaking existence
       return res.status(200).json({
         message:
           "If an account exists for this email, a verification link has been sent.",
       });
     }
 
-    // Create a token for verification (subject is the found user's id)
     const token = createToken(user._id.toString());
 
     // Build verification link
@@ -233,7 +227,6 @@ export const verifyEmail = async (
   try {
     const { email, token } = req.body || {};
 
-    // Validate input presence
     if (typeof email !== "string" || !email.trim()) {
       return next(new ApiError(422, "Please provide your email."));
     }
@@ -241,22 +234,18 @@ export const verifyEmail = async (
       return next(new ApiError(422, "Please provide your token."));
     }
 
-    // Normalize and validate email
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
       return next(new ApiError(422, "Please provide a valid email."));
     }
 
-    // Look up the user
-    let user: User | null;
-    user = await userModel.findOne({ email: normalizedEmail });
+    // Patients verify via email
+    let user: any | null;
+    user = await Patient.findOne({ email: normalizedEmail });
 
-    // If you prefer to avoid user enumeration, do not reveal existence
     if (!user) {
       return next(new ApiError(404, "User not found."));
     }
-
-    // Verify token
 
     const jwtKey = process.env.JWT_SECRETE_KEY;
 
@@ -274,7 +263,7 @@ export const verifyEmail = async (
     }
 
     // Update user
-    user.isVerified = "true";
+    user.isVerified = true;
     await user.save();
 
     return res.status(200).json({ message: "Email successfully verified." });
@@ -285,72 +274,149 @@ export const verifyEmail = async (
 };
 
 export const loginUser = async (
-  req: Request<{}, {}, LoginBody>,
+  req: Request<{}, {}, LoginBody & { staffId?: string }>,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
-    const { email, password } = req.body || {};
+    const { email, password, staffId, role } = req.body || ({} as any);
 
-    // Validate input presence
-    if (typeof email !== "string" || !email.trim()) {
-      // return res.status(422).json({ message: "Please provide your email." });
-      return next(new ApiError(422, "Please provide your email."));
-    }
+    // Validate password presence
     if (typeof password !== "string" || !password.trim()) {
-      // return res.status(422).json({ message: "Please provide your password." });
       return next(new ApiError(422, "Please provide your password."));
     }
 
-    // Normalize and validate email
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!validator.isEmail(normalizedEmail)) {
-      // return res.status(422).json({ message: "Please provide a valid email." });
-      return next(new ApiError(422, "Please provide a valid email."));
-    }
+    const targetRole = role || "patient";
 
-    // Look up the user
-    let user: User | null;
-    user = await userModel.findOne({ email: normalizedEmail });
+    const normalizedStaffId = staffId?.trim();
+    const normalizedEmail = email?.trim();
 
-    // If you prefer to avoid user enumeration, do not reveal existence
-    if (!user) {
-      // return res.status(404).json({ message: "User not found." });
-      return next(new ApiError(404, "User not found."));
-    }
+    // Determine login mode: staff (doctors/nurses) vs patient (email)
+    const isStaffLogin = typeof staffId === "string" && !!staffId.trim();
 
-    if (user.isVerified === "false") {
-      // return res.status(401).json({ message: "Please verify your email." });
+    let user: any | null = null;
+
+    if (targetRole === "doctor")
+      user = await Doctor.findOne({ staffId: normalizedStaffId });
+
+    if (targetRole === "nuser")
+      user = await Nurse.findOne({ staffId: normalizedStaffId });
+
+    if (targetRole === "patient")
+      user = await Patient.findOne({ email: normalizedEmail });
+
+    if (!user) return next(new ApiError(404, "User not found."));
+
+    // Optional verification gate only for patients if that matches your policy
+    if (!isStaffLogin && user.isVerified === false) {
       return next(new ApiError(401, "Please verify your email."));
     }
 
-    // Verify password
+    // Verify password against stored hash
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      // return res.status(401).json({ message: "Invalid email or password." });
-      return next(new ApiError(401, "Invalid email or password."));
+      return next(new ApiError(401, "Invalid credentials."));
     }
 
     // Create and send token
     const token = createToken(user._id.toString());
 
-    logger.info(`User logged in: ${user.email}`);
+    logger.info(
+      `User logged in: ${isStaffLogin ? user.fullName || user.staffId : user.email}`,
+    );
 
-    return res.status(201).json({
+    return res.status(200).json({
       message: "User logged in successfully",
       user: {
         id: user._id,
         email: user.email,
-        username: user.username,
-        profilePhoto: user.profilePhoto,
-        role: user.role,
-        token: token,
-        isVerified: user.isVerified,
+        username: user.fullName,
+        profilePhoto: (user as any).profilePhoto,
+        role:
+          (user as any).role ||
+          ((user as any).licenseNo
+            ? "doctor"
+            : (user as any).nursingRank
+              ? "nurse"
+              : "patient"),
+        staffId: (user as any).staffId,
+        token,
+        isVerified: (user as any).isVerified ?? true,
       },
     });
   } catch (err) {
     console.error("User login error:", err);
-    // return res.status(500).json({ message: "An unexpected error occurred." });
+    return next(new ApiError(500, "An unexpected error occurred."));
+  }
+};
+
+export const loginPatient = async (
+  req: Request<{}, {}, PatientLoginBody>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, password } = req.body || ({} as any);
+
+    const user = await Patient.findOne({ email });
+
+    if (!user) return next(new ApiError(404, "User not found."));
+
+    // Verify password against stored hash
+    const isPasswordValid = await bcrypt.compare(password!, user.password);
+    if (!isPasswordValid) {
+      return next(new ApiError(401, "Invalid credentials."));
+    }
+
+    // Create and send token
+    const token = createToken(user._id.toString());
+
+    logger.info(
+      `Patient logged in: ${email ? user.fullName || user._id : user.email}`,
+    );
+
+    const cleanPatient: IPatiensstResponse = {
+      _id: user._id.toString(),
+      patientId: user.patientId,
+      fullName: user.fullName,
+      email: user.email,
+      contactNumber: user.contactNumber,
+      role: "PATIENT",
+
+      healthSummary: {
+        bloodGroup: user.bloodGroup,
+        allergies: user.allergies || [],
+        chronicConditions: user.chronicConditions || [],
+        isVerified: user.isVerified,
+      },
+
+      details: {
+        dob: user.dateOfBirth, // mapped from dateOfBirth in DB
+        gender: user.gender,
+        occupation: user.occupation ?? undefined,
+      },
+
+      emergency: {
+        name: user.emergencyContact!.name,
+        phone: user.emergencyContact!.phone,
+      },
+
+      nearbyClinicId: user.nearbyClinicId?.toString() || "",
+      lastVisit: user.lastVisitDate
+        ? user.lastVisitDate.toISOString()
+        : "New Patient",
+    };
+
+    return res.status(200).json({
+      message: "User logged in successfully",
+      data: {
+        cleanPatient,
+      },
+      token: token,
+      status: "success",
+    });
+  } catch (err) {
+    console.error("User login error:", err);
     return next(new ApiError(500, "An unexpected error occurred."));
   }
 };
@@ -362,24 +428,20 @@ export const forgotPasswordLink = async (
 ): Promise<void> => {
   try {
     const { email } = req.body;
-    // Validate email input
     if (!email) {
-      // return res.status(400).json({ message: "Email is required." });
       return next(new ApiError(400, "Email is required."));
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     if (!validator.isEmail(normalizedEmail)) {
-      // return res.status(422).json({ message: "Please provide a valid email." });
       return next(new ApiError(422, "Please provide a valid email."));
     }
 
-    // Find user
-    let user: User | null;
-    user = await userModel.findOne({ normalizedEmail });
+    // Patients reset via email
+    let user: any | null;
+    user = await Patient.findOne({ email: normalizedEmail });
 
     if (!user) {
-      // return res.status(404).json({ message: "No account found with that email." });
       return next(new ApiError(404, "No account found with that email."));
     }
 
@@ -458,8 +520,8 @@ export const resetPassword = async (
     }
 
     // Find User & Reconstruct Dynamic Secret
-    let user: User | null;
-    user = await userModel.findById(id);
+    let user: any | null;
+    user = await Patient.findById(id);
     if (!user || user.email !== normalizedEmail) {
       // return res.status(404).json({ message: "User not found or email mismatch." });
       return next(new ApiError(404, "User not found or email mismatch."));
@@ -495,3 +557,4 @@ export const resetPassword = async (
     res.status(500).json({ message: "Internal server error." });
   }
 };
+*/

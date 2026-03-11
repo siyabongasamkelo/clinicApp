@@ -23,7 +23,7 @@ export interface VerifyEmailRequestBody {
   email?: string;
 }
 
-export interface LoginBody {
+export interface PatientLoginBody {
   email?: string;
   password?: string;
 }
