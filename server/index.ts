@@ -31,11 +31,19 @@ app.use(express.json());
 
 // fileupload usually needs a 'any' cast if types are tricky,
 // but basic usage works like this:
-app.use(fileupload({ useTempFiles: true }));
+// app.use(fileupload({ useTempFiles: true }));
+
+app.use(
+  fileupload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+    parseNested: true, // <--- This MUST be true for address[city] to work
+  }),
+);
 
 // Routes
 app.use("/auth", authRoutes);
-app.use("/api/appointments", appointmentRoutes);
+// app.use("/api/appointments", appointmentRoutes);
 
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
