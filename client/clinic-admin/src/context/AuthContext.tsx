@@ -7,10 +7,12 @@ import {
   ReactNode,
 } from "react";
 import { AuthService } from "../services/auth.services";
+import type { LoginSchemaType } from "../schemas/auth.schema";
 
 interface AuthContextType {
   user: any | null;
-  login: (credentials: any) => Promise<void>;
+  doctorLogin: (credentials: any) => Promise<void>;
+  nurseLogin: (credentials: any) => Promise<void>;
   register: (credentials: any) => Promise<void>;
   verifyEmailRequest: (credentials: any) => Promise<void>;
   verifyEmail: (credentials: any) => Promise<void>;
@@ -35,8 +37,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
   }, []);
 
-  const login = async (credentials: any) => {
-    const data = await AuthService.login(credentials);
+  const doctorLogin = async (credentials: LoginSchemaType) => {
+    const data = await AuthService.doctorLogin(credentials);
+    setUser(data.user); // Update global state with the user from response
+  };
+
+  const nurseLogin = async (credentials: LoginSchemaType) => {
+    const data = await AuthService.nurseLogin(credentials);
     setUser(data.user); // Update global state with the user from response
   };
 
@@ -74,7 +81,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
-        login,
+        nurseLogin,
+        doctorLogin,
         logout,
         register,
         verifyEmailRequest,

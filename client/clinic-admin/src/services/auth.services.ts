@@ -9,21 +9,37 @@ import type {
 } from "../types/auth.type";
 
 export const AuthService = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  doctorLogin: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-      const response = await api.post("/auth/login", credentials);
+      const response = await api.post("/auth/login/doctor", credentials);
 
-      if (response.data.user.token) {
-        localStorage.setItem("token", response.data.user.token);
-        // Save user object for quick access
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
       return response.data;
     } catch (error) {
       console.error("Login failed:", error);
-      throw error; // Let the UI handle the error message
+      throw error;
     }
   },
+
+  nurseLogin: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    try {
+      const response = await api.post("/auth/login/nurse", credentials);
+
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  },
+
+  //------------------------------Register functions------------------------------//
 
   register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
     try {

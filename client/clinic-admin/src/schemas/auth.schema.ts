@@ -3,9 +3,8 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png"];
 
 export const loginSchema = Yup.object({
-  email: Yup.string()
-    .required("Email is required")
-    .email("Invalid email format"),
+  staffId: Yup.string().required("staff is required").min(3),
+  role: Yup.string().required("role is required"),
   password: Yup.string()
     .required("Password is required")
     .min(6, "Password must be at least 6 characters"),
