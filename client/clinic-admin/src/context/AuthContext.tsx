@@ -26,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any | null>(null);
+  const [loginErrors, setLoginErrors] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,12 +40,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const doctorLogin = async (credentials: LoginSchemaType) => {
     const data = await AuthService.doctorLogin(credentials);
-    setUser(data.user); // Update global state with the user from response
+    if (data?.status === "success") setUser(data?.data);
+
+    setUser(null);
+    return data;
   };
 
   const nurseLogin = async (credentials: LoginSchemaType) => {
     const data = await AuthService.nurseLogin(credentials);
-    setUser(data.user); // Update global state with the user from response
+    setUser(data.user);
   };
 
   const register = async (credentials: any) => {
@@ -64,12 +68,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const forgotPassword = async (credentials: any) => {
     const data = await AuthService.forgotPassword(credentials);
-    setUser(data.user); // Update global state with the user from response
+    setUser(data.user);
   };
 
   const resetPassword = async (credentials: any) => {
     const data = await AuthService.resetPassword(credentials);
-    setUser(data.user); // Update global state with the user from response
+    setUser(data.user);
+  };
+
+  const setLoadingError = async (credentials: any) => {
+    setLoginErrors(credentials);
   };
 
   const logout = () => {
@@ -89,6 +97,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         verifyEmail,
         forgotPassword,
         resetPassword,
+        setLoadingError,
+        loginErrors,
         loading,
       }}
     >

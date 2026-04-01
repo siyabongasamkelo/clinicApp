@@ -1,12 +1,12 @@
 import { useFormik } from "formik";
 import { loginSchema } from "../schemas/auth.schema";
-import { useAuth } from "../context/AuthContext";
 // import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { notify } from "../utils/toast";
+import { useAuth } from "../context/AuthContext";
 
 export const useLoginForm = () => {
-  const { nurseLogin, doctorLogin } = useAuth();
+  const { nurseLogin, doctorLogin, setLoadingError } = useAuth();
   // const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -18,13 +18,21 @@ export const useLoginForm = () => {
         setServerError(null);
 
         if (values.role === "DOCTOR") {
-          await doctorLogin({
+          const results = await doctorLogin({
             staffId: values.staffId,
             password: values.password,
             role: values.role,
           });
 
-          notify.success(`Successfully logged in!`);
+          if (results?.status === "fail") {
+            notify.error(results?.message);
+            setLoadingError(results?.message);
+            setServerError(results?.message);
+          }
+
+          if (results?.status === "success")
+            notify.success(`Successfully logged in!`);
+
           setSubmitting(false);
           // navigate("/dashboard");
         }
@@ -41,9 +49,9 @@ export const useLoginForm = () => {
           // navigate("/dashboard");
         }
       } catch (err: any) {
-        setServerError(err.response?.data?.message || "Authentication failed");
-        notify.error(err.response?.data?.message || "Login failed");
-        console.log(err);
+        console.log("error from the useLoginForm", err);
+        setServerError(err.response?.message || "Authentication failed");
+        notify.error(err.response?.message || "Login failed");
       }
     },
   });

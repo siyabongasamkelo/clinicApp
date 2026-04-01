@@ -15,7 +15,6 @@ export const Stack = styled.div<StackProps>`
   align-items: ${(props) => props.$align || "stretch"};
   justify-content: ${(props) => props.$justify || "flex-start"};
 
-  /* This pulls the exact pixel/rem value from your theme spacing */
   gap: ${(props) =>
     props.$gap ? props.theme.spacing[props.$gap] : props.theme.spacing.md};
 

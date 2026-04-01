@@ -3,31 +3,45 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/",
+  validateStatus: (status) => status < 500,
   timeout: 10000,
 });
 
 // REQUEST Interceptor: The "Outbound Security"
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token && config.headers) {
-      // Automatically injects Bearer token into every request
-      config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // 1. Check if the error happened on an AUTH route
+    // (We don't want to redirect if a login/register attempt fails)
+    const isAuthRoute = error.config?.url?.includes("/auth");
+
+    if (error.response && error.response.status === 401) {
+      // 2. Only redirect if it's NOT an auth route
+      if (!isAuthRoute) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login?error=session_expired";
+      }
     }
-    return config;
+
+    // 3. ALWAYS reject so the .catch() in your useLoginForm runs
+    return Promise.reject(error);
   },
-  (error) => Promise.reject(error),
 );
 
 // RESPONSE Interceptor: The "Inbound Security"
 api.interceptors.response.use(
-  (response) => response, // Pass through successful responses
+  (response) => response,
   (error) => {
-    // If the server returns 401 (Unauthorized), the session is dead
+    const isLoginPage = window.location.pathname === "/login";
+
     if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
-      // Redirect to login with a query param to show a message
-      window.location.href = "/login?error=session_expired";
+
+      // ONLY redirect if we aren't already on the login page
+      if (!isLoginPage) {
+        window.location.href = "/login?error=session_expired";
+      }
     }
     return Promise.reject(error);
   },

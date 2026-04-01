@@ -324,14 +324,14 @@ export const loginDoctor = async (
 
     logger.info(`User logged in: ${doctor.email}`);
 
-    const { password: _pw, __v, ...patientData } = doctor.toObject() as any;
+    const { password: _pw, __v, ...doctorData } = doctor.toObject() as any;
 
     return res.status(201).json({
       status: "success",
       message: "User logged in successfully",
       token,
       data: {
-        patientData,
+        doctorData,
       },
     });
   } catch (err) {

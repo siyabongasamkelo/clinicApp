@@ -4,7 +4,6 @@ import App from "./App";
 import { ThemeProvider } from "styled-components";
 import { appTheme } from "./styles/Theme";
 import { AuthProvider } from "./context/AuthContext";
-import { AppointmentProvider } from "./context/AppointmentContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
@@ -24,11 +23,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         theme="colored"
       />
 
-      <AppointmentProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </AppointmentProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ThemeProvider>
   </BrowserRouter>,
 );

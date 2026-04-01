@@ -11,13 +11,16 @@ import type {
 export const AuthService = {
   doctorLogin: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-      const response = await api.post("/auth/login/doctor", credentials);
+      const response = await api.post("/auth/login/doctor", credentials, {
+        skipInterceptor: true,
+      } as any);
 
-      if (response.data.token) {
+      if (response.data.status === "success") {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
-      return response.data;
+
+      return response?.data;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -45,9 +48,6 @@ export const AuthService = {
     try {
       const response = await api.post("/auth/register", credentials);
 
-      if (response.data.message === "User successfully registered") {
-        console.log("User registered successfuly");
-      }
       return response.data;
     } catch (error) {
       console.error("Register failed:", error);
@@ -132,9 +132,17 @@ export const AuthService = {
   getCurrentUser: () => {
     try {
       const userStr = localStorage.getItem("user");
-      return userStr ? JSON.parse(userStr) : null;
+
+      // Check for the STRING "undefined" or "null" which localStorage creates
+      if (!userStr || userStr === "undefined" || userStr === "null") {
+        return null;
+      }
+
+      return JSON.parse(userStr);
     } catch (e) {
       console.error("Failed to parse user from storage", e);
+      // If it's corrupted, just wipe it so it doesn't crash again
+      localStorage.removeItem("user");
       return null;
     }
   },

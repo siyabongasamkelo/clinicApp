@@ -12,6 +12,9 @@ interface FlexProps {
   align?: "stretch" | "center" | "flex-start" | "flex-end";
   gap?: string;
   wrap?: "nowrap" | "wrap" | "wrap-reverse";
+  bg?: string;
+  height?: string;
+  width?: string;
 }
 
 // Create the styled component with default values
@@ -22,4 +25,7 @@ export const Flex = styled.div<FlexProps>`
   align-items: ${({ align }) => align || "stretch"};
   flex-wrap: ${({ wrap }) => wrap || "nowrap"};
   gap: ${({ gap }) => gap || "0"};
+  background-color: ${({ bg }) => bg || "transparent"};
+  height: ${({ height }) => height || "auto"};
+  width: ${({ width }) => width || "auto"};
 `;

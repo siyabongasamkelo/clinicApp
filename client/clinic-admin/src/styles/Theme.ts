@@ -16,15 +16,18 @@ export const mediaQuries = {
 
 export const appTheme = {
   colors: {
-    primary: "#6B7445",
+    primary: "#FF5A5A",
     secondary: "#4B4B4B",
     tertiary: "#FFFFFF",
+    blackText: "#1E1E1E",
+    paragraph: "#787878",
 
     success: "#6CA651",
     error: "#F44336",
   },
   spacing: {
     none: "0",
+    xxs: "0.05rem", // 4px
     xs: "0.25rem", // 4px
     sm: "0.5rem", // 8px
     md: "1rem", // 16px
@@ -51,7 +54,7 @@ export const appTheme = {
   borderRadius: {
     sm: "4px",
     md: "8px",
-    lg: "12px",
+    lg: "10px",
     circle: "50%",
   },
 
