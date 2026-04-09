@@ -1,33 +1,34 @@
 import mongoose, { Schema } from "mongoose";
-import bcrypt from "bcrypt";
 
-const DoctorSchema = new Schema(
+// Sub-document for Contact & Address
+const ContactSchema = new Schema(
   {
-    fullName: { type: String, required: true },
-    staffId: { type: String, required: true, unique: true, default: "PENDING" },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    specialization: [{ type: String }],
-    licenseNo: { type: String, required: true },
-    practicingFrom: { type: Date },
-    contactNumber: { type: String, required: true },
+    phoneNumber: { type: String },
     address: {
       street: String,
       city: String,
       state: String,
       zipCode: String,
     },
-    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic", required: true },
-    yearsOfExperience: { type: Number, default: 0 },
-    bio: { type: String },
-    profilePhoto: { type: String },
-    previousExperience: [
-      {
-        clinicName: String,
-        years: Number,
-        role: String,
-      },
-    ],
+  },
+  { _id: false },
+);
+
+// Sub-document for Practice Details
+const PracticeSchema = new Schema(
+  {
+    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic" },
+    consultationFee: { type: Number },
+    timeSlotPerClient: { type: Number, default: 30 },
+    isVerified: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
+// Sub-document for Education & Experience
+const BackgroundSchema = new Schema(
+  {
     qualifications: [
       {
         institution: String,
@@ -35,36 +36,46 @@ const DoctorSchema = new Schema(
         yearGraduated: Number,
       },
     ],
-    consultationFee: { type: Number, required: true },
-    timeSlotPerClient: { type: Number, default: 30 },
+    previousExperience: [
+      {
+        clinicName: String,
+        years: Number,
+        role: String,
+      },
+    ],
     languagesSpoken: [{ type: String }],
-    isActive: { type: Boolean, default: true },
-    averageRating: { type: Number, default: 0 },
-    isVerified: { type: Boolean, default: false },
+    bio: { type: String },
+  },
+  { _id: false },
+);
+
+const DoctorSchema = new Schema(
+  {
+    // THE BRIDGE: Reference to the Global User Identity
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
+    fullName: { type: String, required: true },
+    profilePhoto: { type: String },
+
+    // Grouped Sub-documents
+    contact: ContactSchema,
+    practice: PracticeSchema,
+    background: BackgroundSchema,
+
+    // Professional stats
+    professional: {
+      specialization: [{ type: String }],
+      licenseNo: { type: String },
+      practicingFrom: { type: Date },
+      yearsOfExperience: { type: Number, default: 0 },
+      averageRating: { type: Number, default: 0 },
+    },
   },
   { timestamps: true },
 );
-
-DoctorSchema.pre("save", async function () {
-  // 'this' refers to the document being saved
-  if (!this.isModified("password")) return;
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    // No need to call next() here!
-  } catch (error: any) {
-    // Re-throw the error so Mongoose catches it
-    throw error;
-  }
-});
-
-DoctorSchema.pre("save", async function () {
-  if (!this.isNew) return; // Only run when creating a new patient
-
-  // Generate a random or sequential ID (e.g., PAT-8372)
-  const randomDigits = Math.floor(1000 + Math.random() * 9000);
-  this.staffId = `PAT-${randomDigits}`;
-});
 
 export const Doctor = mongoose.model("Doctor", DoctorSchema);

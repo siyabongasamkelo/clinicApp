@@ -29,6 +29,9 @@ export const ErrorBoxSyles = styled.div<ErrorBoxProps>`
     ${(props) =>
       props.color ? props.theme.colors[props.color] : props.theme.colors.error};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
+  label {
+    text-align: left;
+  }
 `;
 
 const ErrorBox = (props: ErrorBoxProps) => {

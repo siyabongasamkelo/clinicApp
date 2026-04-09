@@ -4,15 +4,11 @@ import { Input } from "../../components/atoms/Input";
 import {
   FormLabel,
   FormErrorLabel,
-  FormForgotPasswordLink,
-  FormRegisterLink,
-  Span,
   MediumText,
 } from "../../components/ui/typography/Typography";
 import { Stack } from "../../components/atoms/Stack";
 import { Button } from "../../components/atoms/Button";
-import { useLoginForm } from "../../hooks/useLoginForm";
-import { Link } from "react-router-dom";
+import { useVerifyEmailRequestForm } from "../../hooks/useVerifyEmailRequestForm";
 import { Spacer } from "../../components/atoms/Spacer";
 import { useTheme } from "styled-components";
 import ErrorBox from "../../components/atoms/ErrorBox";
@@ -31,17 +27,13 @@ export const LoginFormStyles = styled.div`
 
 export const Form = styled.form``;
 
-const LoginForm = () => {
+const VerifyEmailRequestForm = () => {
   const theme = useTheme(); // Access the global theme
-  const { formik, serverError } = useLoginForm();
+  const { formik, serverError } = useVerifyEmailRequestForm();
 
-  const shouldShowStaffIdError =
-    (formik.touched.staffId || formik.submitCount > 0) &&
-    Boolean(formik.errors.staffId);
-
-  const shouldShowPasswordError =
-    (formik.touched.password || formik.submitCount > 0) &&
-    Boolean(formik.errors.password);
+  const shouldShowEmailError =
+    (formik.touched.email || formik.submitCount > 0) &&
+    Boolean(formik.errors.email);
 
   return (
     <LoginFormStyles>
@@ -60,45 +52,33 @@ const LoginForm = () => {
         >
           <Stack $align={"flex-start"} $direction="column" $gap={"md"}>
             <Spacer $mb={theme.spacing.md} $p="0rem">
-              <MediumText>LOGIN PAGE</MediumText>
+              <MediumText>VERIFY EMAIL REQUEST</MediumText>
             </Spacer>
 
             {serverError && (
               <ErrorBox width="100%" color="error" text={serverError} />
             )}
 
-            <FormLabel>Staff Id</FormLabel>
-            <Input {...formik.getFieldProps("staffId")} placeholder="000 000" />
-            {shouldShowStaffIdError && (
-              <FormErrorLabel>{formik.errors.staffId}</FormErrorLabel>
+            <FormLabel>Email</FormLabel>
+            <Input
+              {...formik.getFieldProps("email")}
+              placeholder="example@anymail.com"
+            />
+            {shouldShowEmailError && (
+              <FormErrorLabel>{formik.errors.email}</FormErrorLabel>
             )}
-
-            <FormLabel>Password</FormLabel>
-
-            <Input type="password" {...formik.getFieldProps("password")} />
-            {shouldShowPasswordError && (
-              <FormErrorLabel>{formik.errors.password}</FormErrorLabel>
-            )}
-
-            <Flex justify="flex-end" direction="row" width="100%">
-              <FormForgotPasswordLink>
-                <Link to="/forgotpassword">Forgot password ?</Link>
-              </FormForgotPasswordLink>
-            </Flex>
 
             {serverError && <FormErrorLabel>{serverError}</FormErrorLabel>}
             <Button
               disabled={formik.isSubmitting}
               type="submit"
               $isLoading={formik.isSubmitting}
+              $w={"80%"}
             >
-              {formik.isSubmitting ? "Logging in..." : "Login"}
+              {formik.isSubmitting
+                ? "Sending Verification Link..."
+                : "Send Verification Link..."}
             </Button>
-
-            <FormRegisterLink>
-              <Span color="#1E1E1E">Don't have an account ? </Span>{" "}
-              <Link to="/register">register now</Link>
-            </FormRegisterLink>
           </Stack>
         </Form>
       </Flex>
@@ -106,4 +86,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default VerifyEmailRequestForm;

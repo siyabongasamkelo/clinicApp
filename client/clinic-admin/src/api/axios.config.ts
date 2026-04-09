@@ -3,46 +3,44 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/",
-  validateStatus: (status) => status < 500,
   timeout: 10000,
+  validateStatus: () => true,
 });
 
-// REQUEST Interceptor: The "Outbound Security"
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // 1. Check if the error happened on an AUTH route
-    // (We don't want to redirect if a login/register attempt fails)
-    const isAuthRoute = error.config?.url?.includes("/auth");
+// REQUEST Interceptor: Use this for adding Tokens
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-    if (error.response && error.response.status === 401) {
-      // 2. Only redirect if it's NOT an auth route
-      if (!isAuthRoute) {
+// RESPONSE Interceptor: Handle Global Errors (401, 500, etc.)
+api.interceptors.response.use(
+  (response) => response, // Status 2xx
+  (error) => {
+    const status = error.response?.status;
+    const path = window.location.pathname;
+
+    // 1. Handle Session Expiry (401)
+    if (status === 401) {
+      const isAuthPage = path === "/login" || path === "/register";
+
+      // Don't redirect if the user is ALREADY trying to log in/register
+      if (!isAuthPage) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.location.href = "/login?error=session_expired";
       }
     }
 
-    // 3. ALWAYS reject so the .catch() in your useLoginForm runs
-    return Promise.reject(error);
-  },
-);
-
-// RESPONSE Interceptor: The "Inbound Security"
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const isLoginPage = window.location.pathname === "/login";
-
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem("token");
-
-      // ONLY redirect if we aren't already on the login page
-      if (!isLoginPage) {
-        window.location.href = "/login?error=session_expired";
-      }
+    // 2. Global Error Logging (Optional)
+    if (status >= 500) {
+      console.error("Server Error: Contact Backend Team");
     }
+
+    // 3. CRITICAL: Pass the error back to your Service/Controller
     return Promise.reject(error);
   },
 );

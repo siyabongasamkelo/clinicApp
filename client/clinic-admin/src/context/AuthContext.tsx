@@ -11,8 +11,7 @@ import type { LoginSchemaType } from "../schemas/auth.schema";
 
 interface AuthContextType {
   user: any | null;
-  doctorLogin: (credentials: any) => Promise<void>;
-  nurseLogin: (credentials: any) => Promise<void>;
+  login: (credentials: any) => Promise<void>;
   register: (credentials: any) => Promise<void>;
   verifyEmailRequest: (credentials: any) => Promise<void>;
   verifyEmail: (credentials: any) => Promise<void>;
@@ -38,42 +37,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
   }, []);
 
-  const doctorLogin = async (credentials: LoginSchemaType) => {
-    const data = await AuthService.doctorLogin(credentials);
+  const login = async (credentials: LoginSchemaType) => {
+    const data = await AuthService.login(credentials);
     if (data?.status === "success") setUser(data?.data);
 
+    console.log("testing");
     setUser(null);
     return data;
   };
 
-  const nurseLogin = async (credentials: LoginSchemaType) => {
-    const data = await AuthService.nurseLogin(credentials);
-    setUser(data.user);
-  };
-
   const register = async (credentials: any) => {
     const data = await AuthService.register(credentials);
-    setUser(data.user); // Update global state with the user from response
+    return data;
   };
 
   const verifyEmailRequest = async (credentials: any) => {
     const data = await AuthService.verifyEmailRequest(credentials);
-    setUser(data.user); // Update global state with the user from response
+
+    return data;
   };
 
   const verifyEmail = async (credentials: any) => {
     const data = await AuthService.verifyEmail(credentials);
-    setUser(data.user); // Update global state with the user from response
+
+    return data;
   };
 
   const forgotPassword = async (credentials: any) => {
     const data = await AuthService.forgotPassword(credentials);
-    setUser(data.user);
+
+    return data;
   };
 
   const resetPassword = async (credentials: any) => {
     const data = await AuthService.resetPassword(credentials);
-    setUser(data.user);
+    return data;
   };
 
   const setLoadingError = async (credentials: any) => {
@@ -89,8 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
-        nurseLogin,
-        doctorLogin,
+        login,
         logout,
         register,
         verifyEmailRequest,

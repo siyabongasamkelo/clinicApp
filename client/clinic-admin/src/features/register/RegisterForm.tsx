@@ -11,11 +11,13 @@ import {
 } from "../../components/ui/typography/Typography";
 import { Stack } from "../../components/atoms/Stack";
 import { Button } from "../../components/atoms/Button";
-import { useLoginForm } from "../../hooks/useLoginForm";
+import { useLightRegisterForm } from "../../hooks/useLightRegistrationForm";
+import { Select } from "../login/DropDownBox";
 import { Link } from "react-router-dom";
 import { Spacer } from "../../components/atoms/Spacer";
 import { useTheme } from "styled-components";
 import ErrorBox from "../../components/atoms/ErrorBox";
+import { useAuth } from "../../context/AuthContext";
 
 export const LoginFormStyles = styled.div`
   height: 100vh;
@@ -31,17 +33,26 @@ export const LoginFormStyles = styled.div`
 
 export const Form = styled.form``;
 
-const LoginForm = () => {
+const RegisterForm = () => {
   const theme = useTheme(); // Access the global theme
-  const { formik, serverError } = useLoginForm();
+  const { formik, serverError } = useLightRegisterForm();
+  const { loginErrors } = useAuth();
 
-  const shouldShowStaffIdError =
-    (formik.touched.staffId || formik.submitCount > 0) &&
-    Boolean(formik.errors.staffId);
+  const shouldShowEmailError =
+    (formik.touched.email || formik.submitCount > 0) &&
+    Boolean(formik.errors.email);
+
+  const shouldShowFullNameError =
+    (formik.touched.email || formik.submitCount > 0) &&
+    Boolean(formik.errors.email);
 
   const shouldShowPasswordError =
     (formik.touched.password || formik.submitCount > 0) &&
     Boolean(formik.errors.password);
+
+  const shouldShowRoleError =
+    (formik.touched.role || formik.submitCount > 0) &&
+    Boolean(formik.errors.role);
 
   return (
     <LoginFormStyles>
@@ -60,17 +71,29 @@ const LoginForm = () => {
         >
           <Stack $align={"flex-start"} $direction="column" $gap={"md"}>
             <Spacer $mb={theme.spacing.md} $p="0rem">
-              <MediumText>LOGIN PAGE</MediumText>
+              <MediumText>REGISTER PAGE</MediumText>
             </Spacer>
 
             {serverError && (
               <ErrorBox width="100%" color="error" text={serverError} />
             )}
 
-            <FormLabel>Staff Id</FormLabel>
-            <Input {...formik.getFieldProps("staffId")} placeholder="000 000" />
-            {shouldShowStaffIdError && (
-              <FormErrorLabel>{formik.errors.staffId}</FormErrorLabel>
+            <FormLabel>Full name</FormLabel>
+            <Input
+              {...formik.getFieldProps("fullName")}
+              placeholder="John Doe"
+            />
+            {shouldShowFullNameError && (
+              <FormErrorLabel>{formik.errors.fullName}</FormErrorLabel>
+            )}
+
+            <FormLabel>Email</FormLabel>
+            <Input
+              {...formik.getFieldProps("email")}
+              placeholder="example@anymail.com"
+            />
+            {shouldShowEmailError && (
+              <FormErrorLabel>{formik.errors.email}</FormErrorLabel>
             )}
 
             <FormLabel>Password</FormLabel>
@@ -82,22 +105,32 @@ const LoginForm = () => {
 
             <Flex justify="flex-end" direction="row" width="100%">
               <FormForgotPasswordLink>
-                <Link to="/forgotpassword">Forgot password ?</Link>
+                <Link to="/">Forgot password ?</Link>
               </FormForgotPasswordLink>
             </Flex>
 
+            <FormLabel>Role</FormLabel>
+            <Select {...formik.getFieldProps("role")}>
+              <option value="">--Please choose an option--</option>
+              <option value="DOCTOR">Doctor</option>
+              <option value="NURSE">Nurse</option>
+            </Select>
+            {shouldShowRoleError && (
+              <FormErrorLabel>{formik.errors.role}</FormErrorLabel>
+            )}
+
             {serverError && <FormErrorLabel>{serverError}</FormErrorLabel>}
             <Button
-              disabled={formik.isSubmitting}
+              disabled={formik.isSubmitting} // Disable while loading
               type="submit"
-              $isLoading={formik.isSubmitting}
+              $isLoading={formik.isSubmitting} // Pass the loading state as a transient prop
             >
-              {formik.isSubmitting ? "Logging in..." : "Login"}
+              {formik.isSubmitting ? "Registering..." : "Register"}
             </Button>
 
             <FormRegisterLink>
               <Span color="#1E1E1E">Don't have an account ? </Span>{" "}
-              <Link to="/register">register now</Link>
+              <Link to="/">register now</Link>
             </FormRegisterLink>
           </Stack>
         </Form>
@@ -106,4 +139,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default RegisterForm;

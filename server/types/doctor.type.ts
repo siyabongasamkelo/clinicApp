@@ -39,3 +39,26 @@ export interface IDoctor {
   averageRating: number;
   role: "DOCTOR"; // Hardcoded for this table
 }
+
+// types/doctor.types.ts
+export interface IDoctorUpdateInput {
+  contact?: {
+    phoneNumber?: string;
+    address?: {
+      street?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+    };
+  };
+  practice?: {
+    clinicId?: string;
+    consultationFee?: number;
+    timeSlotPerClient?: number;
+  };
+  professional?: {
+    specialization?: string[];
+    licenseNo?: string;
+  };
+  bio?: string;
+}

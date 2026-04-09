@@ -3,15 +3,16 @@ import type {
   LoginCredentials,
   AuthResponse,
   VerifyEmailRequestCredentials,
-  RegisterCredentials,
+  // RegisterCredentials,
   VerifyEmailCredentials,
   ResetPasswordCredentials,
 } from "../types/auth.type";
 
 export const AuthService = {
-  doctorLogin: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-      const response = await api.post("/auth/login/doctor", credentials, {
+      console.log("testing asd");
+      const response = await api.post("/auth/login", credentials, {
         skipInterceptor: true,
       } as any);
 
@@ -20,6 +21,9 @@ export const AuthService = {
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
 
+      if (response.data.status !== "success")
+        return "incorrect email or password";
+
       return response?.data;
     } catch (error) {
       console.error("Login failed:", error);
@@ -27,31 +31,16 @@ export const AuthService = {
     }
   },
 
-  nurseLogin: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  register: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-      const response = await api.post("/auth/login/nurse", credentials);
+      const response = await api.post("/auth/register", credentials, {
+        skipInterceptor: true,
+      } as any);
 
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-      }
-      return response.data;
+      return response?.data;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("registering failed:", error);
       throw error;
-    }
-  },
-
-  //------------------------------Register functions------------------------------//
-
-  register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
-    try {
-      const response = await api.post("/auth/register", credentials);
-
-      return response.data;
-    } catch (error) {
-      console.error("Register failed:", error);
-      throw error; // Let the UI handle the error message
     }
   },
 
@@ -64,12 +53,6 @@ export const AuthService = {
         credentials,
       );
 
-      if (
-        response.data.message ===
-        "If an account exists for this email, a verification link has been sent."
-      ) {
-        console.log("Email verification request successfully sent");
-      }
       return response.data;
     } catch (error) {
       console.error("Email verification request failed:", error);
@@ -81,7 +64,7 @@ export const AuthService = {
     credentials: VerifyEmailCredentials,
   ): Promise<AuthResponse> => {
     try {
-      const response = await api.post("/auth/forgot-password", credentials);
+      const response = await api.post("/auth/verify-account", credentials);
 
       if (response.data.message === "Email successfully verified.") {
         console.log("Email verified successfully");
@@ -115,12 +98,6 @@ export const AuthService = {
     try {
       const response = await api.post("/auth/reset-password", credentials);
 
-      if (
-        response.data.message ===
-        "Password updated successfully. You can now log in."
-      ) {
-        console.log("Password updated successfully. You can now log in.");
-      }
       return response.data;
     } catch (error) {
       console.error("Failed to reset password", error);

@@ -4,6 +4,20 @@ const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png"];
 
 export const loginSchema = Yup.object({
   staffId: Yup.string().required("staff is required").min(3),
+  password: Yup.string()
+    .required("Password is required")
+    .min(6, "Password must be at least 6 characters"),
+});
+
+export const updatePasswordSchema = Yup.object({
+  password: Yup.string()
+    .required("Password is required")
+    .min(6, "Password must be at least 6 characters"),
+});
+
+export const lightRegisterSchema = Yup.object({
+  fullName: Yup.string().required("full name is required").min(6),
+  email: Yup.string().required("email is required").min(3),
   role: Yup.string().required("role is required"),
   password: Yup.string()
     .required("Password is required")
@@ -53,3 +67,7 @@ export const verifyEmailRequestSchema = Yup.object({
 export type VerifyEmailRequest = Yup.InferType<typeof verifyEmailRequestSchema>;
 export type LoginSchemaType = Yup.InferType<typeof loginSchema>;
 export type RegisterSchemaType = Yup.InferType<typeof registerSchema>;
+export type LightRegisterSchemaType = Yup.InferType<typeof lightRegisterSchema>;
+export type UpdatePasswordSchemaType = Yup.InferType<
+  typeof updatePasswordSchema
+>;

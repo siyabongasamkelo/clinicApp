@@ -43,3 +43,8 @@ export interface ResetPasswordCredentials {
   id: string;
   token: string;
 }
+
+export interface AuthError {
+  status: string;
+  message: string;
+}

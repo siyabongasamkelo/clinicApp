@@ -4,15 +4,11 @@ import { Input } from "../../components/atoms/Input";
 import {
   FormLabel,
   FormErrorLabel,
-  FormForgotPasswordLink,
-  FormRegisterLink,
-  Span,
   MediumText,
 } from "../../components/ui/typography/Typography";
 import { Stack } from "../../components/atoms/Stack";
 import { Button } from "../../components/atoms/Button";
-import { useLoginForm } from "../../hooks/useLoginForm";
-import { Link } from "react-router-dom";
+import { useUpdatePasswordForm } from "../../hooks/useUpdatePasswordForm";
 import { Spacer } from "../../components/atoms/Spacer";
 import { useTheme } from "styled-components";
 import ErrorBox from "../../components/atoms/ErrorBox";
@@ -31,13 +27,9 @@ export const LoginFormStyles = styled.div`
 
 export const Form = styled.form``;
 
-const LoginForm = () => {
+const UpdatePasswordForm = () => {
   const theme = useTheme(); // Access the global theme
-  const { formik, serverError } = useLoginForm();
-
-  const shouldShowStaffIdError =
-    (formik.touched.staffId || formik.submitCount > 0) &&
-    Boolean(formik.errors.staffId);
+  const { formik, serverError } = useUpdatePasswordForm();
 
   const shouldShowPasswordError =
     (formik.touched.password || formik.submitCount > 0) &&
@@ -60,31 +52,22 @@ const LoginForm = () => {
         >
           <Stack $align={"flex-start"} $direction="column" $gap={"md"}>
             <Spacer $mb={theme.spacing.md} $p="0rem">
-              <MediumText>LOGIN PAGE</MediumText>
+              <MediumText>UPDATE PASSWORD</MediumText>
             </Spacer>
 
             {serverError && (
               <ErrorBox width="100%" color="error" text={serverError} />
             )}
 
-            <FormLabel>Staff Id</FormLabel>
-            <Input {...formik.getFieldProps("staffId")} placeholder="000 000" />
-            {shouldShowStaffIdError && (
-              <FormErrorLabel>{formik.errors.staffId}</FormErrorLabel>
-            )}
-
             <FormLabel>Password</FormLabel>
-
-            <Input type="password" {...formik.getFieldProps("password")} />
+            <Input
+              {...formik.getFieldProps("password")}
+              placeholder="Password"
+              type="password"
+            />
             {shouldShowPasswordError && (
               <FormErrorLabel>{formik.errors.password}</FormErrorLabel>
             )}
-
-            <Flex justify="flex-end" direction="row" width="100%">
-              <FormForgotPasswordLink>
-                <Link to="/forgotpassword">Forgot password ?</Link>
-              </FormForgotPasswordLink>
-            </Flex>
 
             {serverError && <FormErrorLabel>{serverError}</FormErrorLabel>}
             <Button
@@ -92,13 +75,8 @@ const LoginForm = () => {
               type="submit"
               $isLoading={formik.isSubmitting}
             >
-              {formik.isSubmitting ? "Logging in..." : "Login"}
+              {formik.isSubmitting ? "Reseting  Password..." : "Reset Password"}
             </Button>
-
-            <FormRegisterLink>
-              <Span color="#1E1E1E">Don't have an account ? </Span>{" "}
-              <Link to="/register">register now</Link>
-            </FormRegisterLink>
           </Stack>
         </Form>
       </Flex>
@@ -106,4 +84,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default UpdatePasswordForm;

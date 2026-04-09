@@ -23,10 +23,10 @@ interface BoxProps {
 export const Box = styled.div<BoxProps>`
   /* 1. Base Box Properties */
   box-sizing: border-box;
-  width: ${({ $w }) => (typeof $w === "number" ? `${$w}px` : $w || "auto")};
+  width: ${({ $w }) => (typeof $w === "number" ? `${$w}` : $w || "auto")};
   max-width: ${({ $maxW }) =>
     typeof $maxW === "number" ? `${$maxW}px` : $maxW || "none"};
-  height: ${({ $h }) => (typeof $h === "number" ? `${$h}px` : $h || "auto")};
+  height: ${({ $h }) => (typeof $h === "number" ? `${$h}` : $h || "auto")};
   background-color: ${({ $bg, theme }) =>
     theme.colors?.[$bg || ""] || $bg || "transparent"};
   border-radius: ${({ $radius }) =>

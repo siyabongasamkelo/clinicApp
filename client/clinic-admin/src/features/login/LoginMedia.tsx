@@ -94,7 +94,7 @@ const LoginMedia = () => {
 
         <MediumText>PORTAL</MediumText>
 
-        <Box $w={400}>
+        <Box $w={"400px"}>
           <Spacer $mt={theme.spacing.md} $p="0rem">
             <SmallText>
               Welcome back. Your role is the heartbeat of this community. We’ve

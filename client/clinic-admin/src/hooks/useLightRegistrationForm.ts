@@ -1,27 +1,28 @@
 import { useFormik } from "formik";
-import { loginSchema } from "../schemas/auth.schema";
+import { lightRegisterSchema } from "../schemas/auth.schema";
 // import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { notify } from "../utils/toast";
 import { useAuth } from "../context/AuthContext";
-// import type { AuthError } from "../types/auth.type";
+import type { AuthError } from "../types/auth.type";
 
-export const useLoginForm = () => {
-  const { login, setLoadingError } = useAuth();
+export const useLightRegisterForm = () => {
+  const { register, setLoadingError } = useAuth();
   // const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const formik = useFormik({
-    initialValues: { staffId: "", password: "" },
-    validationSchema: loginSchema,
+    initialValues: { email: "", password: "", role: "", fullName: "" },
+    validationSchema: lightRegisterSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
         setServerError(null);
-        console.log("working");
 
-        const results = await login({
-          identifier: values.staffId,
+        const results = await register({
+          email: values.email,
           password: values.password,
+          role: values.role,
+          fullName: values.fullName,
         });
 
         if (results?.status === "fail") {
@@ -30,21 +31,17 @@ export const useLoginForm = () => {
           setServerError(results?.message);
         }
 
-        if (results === "incorrect email or password") {
-          notify.error(results);
-          setLoadingError(results);
-          setServerError(results);
-        }
-
         if (results?.status === "success")
-          notify.success(`Successfully logged in!`);
+          notify.success(`User successfully registered!`);
 
         setSubmitting(false);
         // navigate("/dashboard");
-      } catch (err) {
-        console.log("error from the useLoginForm", err);
-        setServerError(err.response?.message || "Authentication failed");
-        notify.error(err.response?.message || "Login failed");
+
+        setSubmitting(false);
+        // navigate("/dashboard");
+      } catch (err: AuthError) {
+        setServerError(err.response?.message || "Registration failed");
+        notify.error(err.response?.message || "Registration failed");
       }
     },
   });

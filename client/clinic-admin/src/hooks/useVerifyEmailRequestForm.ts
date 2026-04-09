@@ -6,7 +6,7 @@ import { useState } from "react";
 import { notify } from "../utils/toast";
 
 export const useVerifyEmailRequestForm = () => {
-  const { verifyEmailRequest } = useAuth();
+  const { verifyEmailRequest, setLoadingError } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -16,8 +16,20 @@ export const useVerifyEmailRequestForm = () => {
     onSubmit: async (values, { setSubmitting }) => {
       try {
         setServerError(null);
-        await verifyEmailRequest({ email: values.email });
-        notify.success(`Email verification request successfully sent`);
+        const verifyRequest = await verifyEmailRequest({ email: values.email });
+
+        if (verifyRequest?.status === "fail") {
+          notify.error(verifyRequest?.message);
+          setLoadingError(verifyRequest?.message);
+          setServerError(verifyRequest?.message);
+        }
+
+        if (verifyRequest?.status === "success") {
+          notify.success(verifyRequest?.message);
+          setLoadingError(null);
+          setServerError(null);
+        }
+
         setSubmitting(false);
         // navigate("/dashboard");
       } catch (err: any) {

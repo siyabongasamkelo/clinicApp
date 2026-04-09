@@ -1,13 +1,19 @@
 import styled, { keyframes } from "styled-components";
 
+interface ButtonProps {
+  // Box Model
+  $w?: string | number;
+  $isLoading: boolean;
+}
+
 const rotate = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
-export const Button = styled.button<{ $isLoading?: boolean }>`
+export const Button = styled.button<ButtonProps>`
   height: 60px;
-  width: 100%;
+  width: ${({ $w }) => (typeof $w === "number" ? `${$w}px` : $w || "100%")};
   color: white;
   font-size: ${(props) => props.theme.fontSizes.base};
   border-radius: 10px;

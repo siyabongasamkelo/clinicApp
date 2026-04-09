@@ -48,3 +48,17 @@ export interface ResetPasswordBody {
 export interface UserPayload {
   id: string;
 }
+
+// types/auth.types.ts
+export interface IRegistrationInput {
+  email: string;
+  password: string;
+  role: "DOCTOR" | "NURSE" | "PATIENT";
+  fullName: string;
+}
+
+export interface IAuthResponse {
+  userId: string;
+  role: string;
+  message: string;
+}

@@ -1,34 +1,13 @@
 import dotenv from "dotenv";
 import sendEmail from "../utils/sendEmail.js";
-import express from "express";
 import type { Request, Response, NextFunction } from "express";
 // import type { NextFunction, Request, Response } from "express";
-import type { UploadedFile } from "express-fileupload";
-import validator from "validator";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
-import { ApiError } from "../utils/ApiError.js";
+import { AuthRepository } from "../repository/authRepository.ts";
+import { AuthAdapter } from "../adapters/authAdaptor.ts";
+import { AuthService } from "../services/auth.services.ts";
 import logger from "../utils/logger.js";
-import { Patient } from "../models/patientModel.js";
-import { Doctor } from "../models/doctorModel.js";
-import { Nurse } from "../models/nurseModel.js";
-import {
-  DoctorRegistrationInput,
-  NurseRegistrationInput,
-  PatientLoginInput,
-  patientLoginSchema,
-  PatientRegistrationInput,
-  staffLoginInput,
-  staffLoginSchema,
-  emailVerificationSchema,
-  EmailVerificationInput,
-  ForgotPasswordInput,
-  ResetPasswordinInput,
-  resetPasswordSchema,
-} from "../validation/auth.schema.js";
-import type { PatientType } from "../models/patientModel.js";
-import { HydratedDocument } from "mongoose";
+import { ApiError } from "../utils/ApiError.js";
 
 dotenv.config();
 // helping functions
@@ -89,764 +68,197 @@ const sendForgotPassowrdLinkEmail = async (resetUrl: string, user: any) => {
   });
 };
 
-//------------------register Account------------------///
-
-export const registerDoctor = async (
-  req: Request<{}, {}, DoctorRegistrationInput>,
+export const registerLite = async (
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  // 2. Change return type to void since middleware handles response
   try {
-    // 1. Upload file (we know it exists because of Zod)
-    const file = req.files!.profilePhoto as any;
-    const photoUrl = await uploadToCloudinary(file.tempFilePath, "doctors");
+    const registrationData = req.body;
 
-    // 2. Save to DB
-    const newDoctor = new Doctor({
-      ...req.body,
-      profilePhoto: photoUrl,
-    });
+    const newUser = await AuthService.registerAuthDetails(registrationData);
 
-    await newDoctor.save();
+    if (!newUser)
+      return next(new ApiError(501, "Error occured while registering user"));
 
-    //sending email
+    if (newUser === "User with this email already exists")
+      return next(new ApiError(409, "User already exists"));
+    // 3. Adapt the result (Data Transformation)
+    // const response = AuthAdapter.toRegisterResponse(newUser);
 
-    const token = createToken(newDoctor._id.toString());
-
-    try {
-      await sendVerificationEmail(newDoctor.email, token);
-    } catch (err) {
-      console.log(err);
-      return next(
-        new ApiError(
-          502,
-          "We couldn't send the verification email. Please try again later.",
-        ),
-      );
-    }
-
-    res.status(201).json({ message: "Doctor created successfully" });
-  } catch (err: any) {
-    // 6. The "Magic" - pass any unexpected error (DB crash, etc.) to the handler
-    next(err);
-  }
-};
-
-export const registerPatient = async (
-  req: Request<{}, {}, PatientRegistrationInput>,
-  res: Response,
-  next: NextFunction,
-) => {
-  // 2. Change return type to void since middleware handles response
-  try {
-    // 1. Upload file (we know it exists because of Zod)
-    const file = req.files!.profilePhoto as any;
-    const photoUrl = await uploadToCloudinary(file.tempFilePath, "doctors");
-
-    // 2. Save to DB
-    const newPatient = new Patient({
-      ...req.body,
-      profilePhoto: photoUrl,
-    });
-
-    await newPatient.save();
-
-    const token = createToken(newPatient._id.toString());
-
-    try {
-      await sendVerificationEmail(newPatient.email, token);
-    } catch (err) {
-      console.log(err);
-      return next(
-        new ApiError(
-          502,
-          "We couldn't send the verification email. Please try again later.",
-        ),
-      );
-    }
-
+    logger.info(`User created successfully : ${newUser.newUser.identifier}`);
     res.status(201).json({
       message:
-        "Patient created successfully please check you email and verify your account",
-    });
-  } catch (err: any) {
-    // 6. The "Magic" - pass any unexpected error (DB crash, etc.) to the handler
-    next(err);
-  }
-};
-
-export const registerNurse = async (
-  req: Request<{}, {}, NurseRegistrationInput>,
-  res: Response,
-  next: NextFunction,
-) => {
-  // 2. Change return type to void since middleware handles response
-  try {
-    // 1. Upload file (we know it exists because of Zod)
-    const file = req.files!.profilePhoto as any;
-    const photoUrl = await uploadToCloudinary(file.tempFilePath, "doctors");
-
-    // 2. Save to DB
-    const newNurse = new Nurse({
-      ...req.body,
-      profilePhoto: photoUrl,
-    });
-
-    await newNurse.save();
-
-    //sending email
-    await newNurse.save();
-
-    const token = createToken(newNurse._id.toString());
-
-    try {
-      await sendVerificationEmail(newNurse.email, token);
-    } catch (err) {
-      console.log(err);
-      return next(
-        new ApiError(
-          502,
-          "We couldn't send the verification email. Please try again later.",
-        ),
-      );
-    }
-
-    res.status(201).json({ message: "Nurse created successfully" });
-  } catch (err: any) {
-    // 6. The "Magic" - pass any unexpected error (DB crash, etc.) to the handler
-    next(err);
-  }
-};
-
-//------------------login Account------------------///
-
-export const loginPatient = async (
-  req: Request<{}, {}, PatientLoginInput>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    // const { email, password, role } = req.body || {};
-
-    const validated = patientLoginSchema.parse(req);
-
-    // 2. Access the nested body
-    const { email, password, role } = validated.body;
-
-    if (role !== "PATIENT")
-      return next(new ApiError(404, "We're only looking for patients"));
-
-    const patient: HydratedDocument<any> = await Patient.findOne({
-      email,
-    }).select("+password");
-
-    // If you prefer to avoid user enumeration, do not reveal existence
-    if (!patient) {
-      // return res.status(404).json({ message: "User not found." });
-      return next(new ApiError(404, "User not found."));
-    }
-
-    if (patient.isVerified === false) {
-      // return res.status(401).json({ message: "Please verify your email." });
-      return next(new ApiError(401, "Please verify your email."));
-    }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, patient.password);
-    if (!isPasswordValid) {
-      // return res.status(401).json({ message: "Invalid email or password." });
-      return next(new ApiError(401, "Invalid email or password."));
-    }
-
-    // Create and send token
-    const token = createToken(patient._id.toString());
-
-    logger.info(`User logged in: ${patient.email}`);
-
-    const { password: _pw, __v, ...patientData } = patient.toObject() as any;
-
-    return res.status(201).json({
+        "user registered successfully and verification email was sent to your email address",
       status: "success",
-      message: "logged in successfully",
-      token,
-      data: {
-        patientData,
-      },
     });
-  } catch (err) {
-    console.error("User login error:", err);
-    // return res.status(500).json({ message: "An unexpected error occurred." });
-    return next(new ApiError(500, "An unexpected error occurred."));
+  } catch (error: any) {
+    next(error);
   }
 };
 
-export const loginDoctor = async (
-  req: Request<{}, {}, staffLoginInput>,
+// controllers/auth.controller.ts
+export const login = async (
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    // const { email, password, role } = req.body || {};
+    const { identifier, password } = req.body;
 
-    const validated = staffLoginSchema.parse(req);
+    // 1. Ask the Service to do the "work"
+    const result = await AuthService.executeLogin(identifier, password);
 
-    // 2. Access the nested body
-    const { staffId, password, role } = validated.body;
-
-    if (role !== "DOCTOR")
-      return next(new ApiError(404, "We're only looking for doctors"));
-
-    const doctor: HydratedDocument<any> = await Doctor.findOne({
-      staffId,
-    }).select("+password");
-
-    // If you prefer to avoid user enumeration, do not reveal existence
-    if (!doctor) {
-      // return res.status(404).json({ message: "User not found." });
-      return next(new ApiError(404, "User not found."));
+    if (!result) {
+      logger.info(`Couldn't log user in : ${identifier}`);
+      return next(new ApiError(401, "Couldn't log user"));
     }
 
-    if (doctor.isVerified === false) {
-      // return res.status(401).json({ message: "Please verify your email." });
-      return next(new ApiError(401, "Please verify your email."));
+    if (!result) {
+      // return res.status(401).json({ message: "Invalid credentials", status: "fail" });
+      return next(new ApiError(401, "Invalid credentials"));
     }
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, doctor.password);
-    if (!isPasswordValid) {
-      // return res.status(401).json({ message: "Invalid email or password." });
-      return next(new ApiError(401, "Invalid email or password."));
+    // 2. Use the Adapter to shape the data for Vite
+    const response = AuthAdapter.toLoginResponse(
+      result.user,
+      result.profile,
+      result.token,
+    );
+
+    logger.info(`User logged in : ${result.user.identifier}`);
+    res.json({ response, message: "login successful", status: "success" });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const getResetPasswordLink = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email } = req.body;
+    console.log("email", email);
+    const getLink = await AuthService.getResetPasswordLink(email);
+
+    if (!getLink) {
+      // return res.status(401).json({ message: "Invalid credentials", status: "fail" });
+      return next(new ApiError(500, "Internal server error"));
     }
 
-    // Create and send token
-    const token = createToken(doctor._id.toString());
+    if (getLink === "user does not exist") {
+      return next(new ApiError(404, "User with these email does not exist"));
+    }
 
-    logger.info(`User logged in: ${doctor.email}`);
+    if (getLink === "couldn't send email") {
+      return next(new ApiError(500, "Internal server error"));
+    }
 
-    const { password: _pw, __v, ...doctorData } = doctor.toObject() as any;
+    // 2. Use the Adapter to shape the data for Vite
 
-    return res.status(201).json({
+    logger.info(`Reset Password Link sent successfully to : ${email}`);
+    res.json({
+      message: "reset password email sent successfully",
       status: "success",
-      message: "User logged in successfully",
-      token,
-      data: {
-        doctorData,
-      },
     });
-  } catch (err) {
-    console.error("User login error:", err);
-    // return res.status(500).json({ message: "An unexpected error occurred." });
-    return next(new ApiError(500, "An unexpected error occurred."));
+  } catch (error: any) {
+    console.log(error);
+    next(error);
   }
 };
 
-export const loginNurse = async (
-  req: Request<{}, {}, staffLoginInput>,
+export const resetPassword = async (
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    // const { email, password, role } = req.body || {};
+    const { password, id, token } = req.body;
 
-    const validated = staffLoginSchema.parse(req);
+    const resetPassword = await AuthService.resetPassword(password, id, token);
 
-    // 2. Access the nested body
-    const { staffId, password, role } = validated.body;
-
-    if (role !== "NURSE")
-      return next(new ApiError(404, "We're only looking for nurse"));
-
-    const nurse: HydratedDocument<any> = await Nurse.findOne({
-      staffId,
-    }).select("+password");
-
-    // If you prefer to avoid user enumeration, do not reveal existence
-    if (!nurse) {
-      // return res.status(404).json({ message: "User not found." });
-      return next(new ApiError(404, "User not found."));
+    if (!resetPassword) {
+      // return res.status(401).json({ message: "Invalid credentials", status: "fail" });
+      return next(new ApiError(500, "Internal server error"));
     }
 
-    if (nurse.isVerified === false) {
-      // return res.status(401).json({ message: "Please verify your email." });
-      return next(new ApiError(401, "Please verify your email."));
-    }
+    if (resetPassword === "No user")
+      return next(new ApiError(500, "User does not exist"));
+    if (resetPassword === "couldn't generate token")
+      return next(new ApiError(500, "Internal server error"));
+    if (resetPassword === "couldn't update password")
+      return next(new ApiError(500, "couldn't update password"));
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, nurse.password);
-    if (!isPasswordValid) {
-      // return res.status(401).json({ message: "Invalid email or password." });
-      return next(new ApiError(401, "Invalid email or password."));
-    }
-
-    // Create and send token
-    const token = createToken(nurse._id.toString());
-
-    logger.info(`User logged in: ${nurse.email}`);
-
-    const { password: _pw, __v, ...patientData } = nurse.toObject() as any;
-
-    return res.status(201).json({
+    logger.info(`Password reset successfully by user with this Id : ${id}`);
+    res.json({
+      message: "reset password email sent successfully",
       status: "success",
-      message: "User logged in successfully",
-      token,
-      data: {
-        patientData,
-      },
     });
-  } catch (err) {
-    console.error("User login error:", err);
-    // return res.status(500).json({ message: "An unexpected error occurred." });
-    return next(new ApiError(500, "An unexpected error occurred."));
+  } catch (error: any) {
+    console.log(error);
+    next(error);
   }
 };
 
-//------------------Verify Account------------------///
-
-export const verifyPatientAccount = async (
-  req: Request<{}, {}, EmailVerificationInput>,
+export const verifyAccount = async (
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const validated = emailVerificationSchema.parse(req);
+    const { email, token } = req.body;
 
-    // 2. Access the nested body
-    const { email, role, token } = validated.body;
+    const verifyAccount = await AuthService.verifyAccount(email, token);
 
-    if (role !== "PATIENT")
-      return next(new ApiError(404, "We're only looking for patients"));
-
-    // Patients verify via email
-    let patient: any | null;
-    patient = await Patient.findOne({ email });
-
-    if (!patient) {
+    if (verifyAccount === "User with this email does not exist")
       return next(new ApiError(404, "User not found."));
-    }
 
-    const jwtKey = process.env.JWT_SECRETE_KEY;
+    if (verifyAccount === "Token verification failed")
+      return next(new ApiError(501, "Internal server error"));
 
-    if (!jwtKey) {
-      throw new Error(
-        "JWT_SECRETE_KEY is not defined in the environment variables",
-      );
-    }
+    if (verifyAccount === "Error while verifying account")
+      return next(new ApiError(501, "Internal server error"));
 
-    try {
-      jwt.verify(token, jwtKey);
-    } catch (tokenErr) {
-      console.error("Token verification failed:", tokenErr);
-      return res.status(401).json({ message: "Invalid token." });
-    }
-
-    // Update user
-    patient.isVerified = true;
-    await patient.save();
-
-    return res.status(200).json({ message: "Email successfully verified." });
-  } catch (err) {
-    console.error("User login error:", err);
-    // return res.status(500).json({ message: "An unexpected error occurred." });
-    return next(new ApiError(500, "An unexpected error occurred."));
+    logger.info(
+      `Account verified successfully by user with this email : ${email}`,
+    );
+    res.json({
+      message: "Account verified successfully",
+      status: "success",
+    });
+  } catch (error: any) {
+    console.log(error);
+    next(error);
   }
 };
 
-export const verifyDoctorAccount = async (
-  req: Request<{}, {}, EmailVerificationInput>,
+export const verifyEmailRequest = async (
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const validated = emailVerificationSchema.parse(req);
+    const { email } = req.body;
 
-    // 2. Access the nested body
-    const { email, role, token } = validated.body;
+    const verifyEmail = await AuthService.VerifyEmailRequest(email);
 
-    if (role !== "DOCTOR")
-      return next(new ApiError(404, "We're only looking for doctors"));
-
-    // Patients verify via email
-    let doctor: any | null;
-    doctor = await Doctor.findOne({ email });
-
-    if (!doctor) {
+    if (verifyEmail === "user does not exist")
       return next(new ApiError(404, "User not found."));
-    }
 
-    const jwtKey = process.env.JWT_SECRETE_KEY;
+    if (verifyEmail === "couldn't generate token")
+      return next(new ApiError(501, "Internal server error"));
 
-    if (!jwtKey) {
-      throw new Error(
-        "JWT_SECRETE_KEY is not defined in the environment variables",
-      );
-    }
+    if (verifyEmail === "couldn't generate token")
+      return next(new ApiError(501, "Internal server error"));
 
-    try {
-      jwt.verify(token, jwtKey);
-    } catch (tokenErr) {
-      console.error("Token verification failed:", tokenErr);
-      return res.status(401).json({ message: "Invalid token." });
-    }
-
-    // Update user
-    doctor.isVerified = true;
-    await doctor.save();
-
-    return res.status(200).json({ message: "Email successfully verified." });
-  } catch (err) {
-    console.error("User login error:", err);
-    // return res.status(500).json({ message: "An unexpected error occurred." });
-    return next(new ApiError(500, "An unexpected error occurred."));
-  }
-};
-
-export const verifyNurseAccount = async (
-  req: Request<{}, {}, EmailVerificationInput>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const validated = emailVerificationSchema.parse(req);
-
-    // 2. Access the nested body
-    const { email, role, token } = validated.body;
-
-    if (role !== "NURSE")
-      return next(new ApiError(404, "We're only looking for nurses"));
-
-    // Patients verify via email
-    let nurse: any | null;
-    nurse = await Nurse.findOne({ email });
-
-    if (!nurse) {
-      return next(new ApiError(404, "User not found."));
-    }
-
-    const jwtKey = process.env.JWT_SECRETE_KEY;
-
-    if (!jwtKey) {
-      throw new Error(
-        "JWT_SECRETE_KEY is not defined in the environment variables",
-      );
-    }
-
-    try {
-      jwt.verify(token, jwtKey);
-    } catch (tokenErr) {
-      console.error("Token verification failed:", tokenErr);
-      return res.status(401).json({ message: "Invalid token." });
-    }
-
-    // Update user
-    nurse.isVerified = true;
-    await nurse.save();
-
-    return res.status(200).json({ message: "Email successfully verified." });
-  } catch (err) {
-    console.error("User login error:", err);
-    // return res.status(500).json({ message: "An unexpected error occurred." });
-    return next(new ApiError(500, "An unexpected error occurred."));
-  }
-};
-
-//------------------forgot Password------------------///
-
-export const patientForgotPasswordLink = async (
-  req: Request<{}, {}, ForgotPasswordInput>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const validated = patientLoginSchema.parse(req);
-
-    // 2. Access the nested body
-    const { email, role } = validated.body;
-
-    if (role !== "PATIENT")
-      return next(new ApiError(404, "We're only looking for patients"));
-
-    // Patients reset via email
-    let patient: any | null;
-    patient = await Patient.findOne({ email });
-
-    if (!patient) {
-      return next(new ApiError(404, "No account found with that email."));
-    }
-
-    // Create a temporary secret for the JWT
-    const secret = process.env.JWT_SECRETE_KEY + patient.password;
-
-    // Generate the Reset Token (expires in 15-20 minutes for security)
-    const token = jwt.sign({ id: patient._id, email: patient.email }, secret, {
-      expiresIn: "20m",
+    res.json({
+      message: "Verification link sent to email",
+      status: "success",
     });
-
-    // Create the Link
-    const baseUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "") || "";
-    const resetUrl = `${baseUrl}/auth/reset-password/${patient._id}/${token}`;
-
-    //sending email
-    sendForgotPassowrdLinkEmail(resetUrl, patient);
-
-    res
-      .status(200)
-      .json({ success: true, message: "Reset link sent to email." });
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    // res.status(500).json({ message: "Internal server error." });
-    return next(new ApiError(500, "Internal server error."));
-  }
-};
-
-export const doctorForgotPasswordLink = async (
-  req: Request<{}, {}, ForgotPasswordInput>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const validated = patientLoginSchema.parse(req);
-
-    // 2. Access the nested body
-    const { email, role } = validated.body;
-
-    if (role !== "DOCTOR")
-      return next(new ApiError(404, "We're only looking for doctors"));
-
-    // Patients reset via email
-    let doctor: any | null;
-    doctor = await Patient.findOne({ email });
-
-    if (!doctor) {
-      return next(new ApiError(404, "No account found with that email."));
-    }
-
-    // Create a temporary secret for the JWT
-    const secret = process.env.JWT_SECRETE_KEY + doctor.password;
-
-    // Generate the Reset Token (expires in 15-20 minutes for security)
-    const token = jwt.sign({ id: doctor._id, email: doctor.email }, secret, {
-      expiresIn: "20m",
-    });
-
-    // Create the Link
-    const baseUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "") || "";
-    const resetUrl = `${baseUrl}/auth/reset-password/${doctor._id}/${token}`;
-
-    //sending email
-    sendForgotPassowrdLinkEmail(resetUrl, doctor);
-
-    res
-      .status(200)
-      .json({ success: true, message: "Reset link sent to email." });
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    // res.status(500).json({ message: "Internal server error." });
-    return next(new ApiError(500, "Internal server error."));
-  }
-};
-
-export const nurseForgotPasswordLink = async (
-  req: Request<{}, {}, ForgotPasswordInput>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const validated = patientLoginSchema.parse(req);
-
-    // 2. Access the nested body
-    const { email, role } = validated.body;
-
-    if (role !== "NURSE")
-      return next(new ApiError(404, "We're only looking for nurse"));
-
-    // Patients reset via email
-    let nurse: any | null;
-    nurse = await Patient.findOne({ email });
-
-    if (!nurse) {
-      return next(new ApiError(404, "No account found with that email."));
-    }
-
-    // Create a temporary secret for the JWT
-    const secret = process.env.JWT_SECRETE_KEY + nurse.password;
-
-    // Generate the Reset Token (expires in 15-20 minutes for security)
-    const token = jwt.sign({ id: nurse._id, email: nurse.email }, secret, {
-      expiresIn: "20m",
-    });
-
-    // Create the Link
-    const baseUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "") || "";
-    const resetUrl = `${baseUrl}/auth/reset-password/${nurse._id}/${token}`;
-
-    //sending email
-    sendForgotPassowrdLinkEmail(resetUrl, nurse);
-
-    res
-      .status(200)
-      .json({ success: true, message: "Reset link sent to email." });
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    // res.status(500).json({ message: "Internal server error." });
-    return next(new ApiError(500, "Internal server error."));
-  }
-};
-
-//------------------reset Password------------------///
-
-export const patientResetPassword = async (
-  req: Request<{}, {}, ResetPasswordinInput, {}>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const validated = resetPasswordSchema.parse(req);
-
-    const { password, id, token, role } = validated.body;
-
-    if (role !== "PATIENT")
-      return next(new ApiError(404, "We're only looking for patients"));
-
-    // Find User & Reconstruct Dynamic Secret
-    let patient: any | null;
-    patient = await Patient.findById(id);
-
-    if (!patient)
-      return next(new ApiError(404, "User not found or email mismatch."));
-
-    // Secret must match exactly what was used in forgotPasswordLink
-    const secret = process.env.JWT_SECRETE_KEY + patient.password;
-
-    // Verify JWT
-    try {
-      jwt.verify(token, secret);
-    } catch (err) {
-      return res
-        .status(401)
-        .json({ message: "Invalid or expired reset link." });
-    }
-
-    // Update Password
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    patient.password = hashedPassword;
-
-    await patient.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Password updated successfully. You can now log in.",
-    });
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    // res.status(500).json({ message: "Internal server error." });
-    return next(new ApiError(500, "Internal server error."));
-  }
-};
-
-export const doctorResetPassword = async (
-  req: Request<{}, {}, ResetPasswordinInput, {}>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const validated = resetPasswordSchema.parse(req);
-
-    const { password, id, token, role } = validated.body;
-
-    if (role !== "DOCTOR")
-      return next(new ApiError(404, "We're only looking for doctor"));
-
-    // Find User & Reconstruct Dynamic Secret
-    let doctor: any | null;
-    doctor = await Doctor.findById(id);
-
-    if (!doctor)
-      return next(new ApiError(404, "User not found or email mismatch."));
-
-    // Secret must match exactly what was used in forgotPasswordLink
-    const secret = process.env.JWT_SECRETE_KEY + doctor.password;
-
-    // Verify JWT
-    try {
-      jwt.verify(token, secret);
-    } catch (err) {
-      return res
-        .status(401)
-        .json({ message: "Invalid or expired reset link." });
-    }
-
-    // Update Password
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    doctor.password = hashedPassword;
-
-    await doctor.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Password updated successfully. You can now log in.",
-    });
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    // res.status(500).json({ message: "Internal server error." });
-    return next(new ApiError(500, "Internal server error."));
-  }
-};
-
-export const nurseResetPassword = async (
-  req: Request<{}, {}, ResetPasswordinInput, {}>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const validated = resetPasswordSchema.parse(req);
-
-    const { password, id, token, role } = validated.body;
-
-    if (role !== "NURSE")
-      return next(new ApiError(404, "We're only looking for nurse"));
-
-    // Find User & Reconstruct Dynamic Secret
-    let nurse: any | null;
-    nurse = await Nurse.findById(id);
-
-    if (!nurse)
-      return next(new ApiError(404, "User not found or email mismatch."));
-
-    // Secret must match exactly what was used in forgotPasswordLink
-    const secret = process.env.JWT_SECRETE_KEY + nurse.password;
-
-    // Verify JWT
-    try {
-      jwt.verify(token, secret);
-    } catch (err) {
-      return res
-        .status(401)
-        .json({ message: "Invalid or expired reset link." });
-    }
-
-    // Update Password
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    nurse.password = hashedPassword;
-
-    await nurse.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Password updated successfully. You can now log in.",
-    });
-  } catch (error) {
-    console.error("Forgot Password Error:", error);
-    // res.status(500).json({ message: "Internal server error." });
-    return next(new ApiError(500, "Internal server error."));
+  } catch (error: any) {
+    console.log(error);
+    next(error);
   }
 };
