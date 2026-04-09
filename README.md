@@ -23,11 +23,21 @@ Tech Stack:
 
 Node.js + Express
 
+Typescript
+
+Reactjs + Styled-componnets
+
 MongoDB + Mongoose
 
 JWT for authentication
 
 dotenv for environment variables
+
+architecture:
+
+Layered Architecture + Hexagonal Architecture
+
+SOLID princeple
 
 Purpose:
 To solve practical problems in clinic operations, providing a structured, reliable, and secure backend system while highlighting backend and full-stack development capabilities.
