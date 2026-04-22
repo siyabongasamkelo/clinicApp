@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+const objectIdSchema = z
+  .string()
+  .regex(/^[0-9a-fA-C]{24}$/i, "Invalid ID format");
+
 export const userLightRegisterSchema = z.object({
   body: z.object({
     // The 'identifier' can be an Email or a Staff ID
@@ -87,46 +91,71 @@ export const CompleteDoctorSchema = AuthSchema.extend({
   bio: z.string().max(500).optional(),
 });
 
-export const doctorRegistrationSchema = z.object({
-  body: z.object({
-    fullName: z.string().min(3, "Full name is required"),
-    // staffId: z.string().min(1, "Staff ID is required"),
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    specialization: z.array(z.string()).optional(),
-    licenseNo: z.string().min(1, "License number is required"),
-    contactNumber: z.string().min(10, "Contact number is required"),
-    clinicId: z
-      .string()
-      .length(24, "Invalid Clinic ID length")
-      .regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format"),
-    consultationFee: z.coerce.number().positive(),
-    timeSlotPerClient: z.coerce.number().positive(),
-    yearsOfExperience: z.coerce.number().positive(),
-    languagesSpoken: z
-      .array(z.string())
-      .nonempty("Must have at least one item")
-      .min(1),
-    isActive: z.coerce.boolean(),
-    averageRating: z.coerce.number().max(10),
-  }),
-  files: z
-    .object({
-      profilePhoto: z
-        .any()
-        .refine(
-          (file) => file !== Array.isArray(file),
-          "Only one photo allowed",
-        )
-        .refine((file) => file?.size <= 5 * 1024 * 1024, "Max file size is 5MB")
-        .refine(
-          (file) =>
-            ["image/jpeg", "image/png", "image/webp"].includes(file?.mimetype),
-          "Only .jpg, .png, and .webp formats are supported",
-        ),
-    })
-    .required({ profilePhoto: true }), // Makes the file mandatory
-});
+export const updateDoctorSchema = z
+  .object({
+    fullName: z.string().min(2).optional(),
+    profilePhoto: z.string().url().optional(),
+
+    contact: z
+      .object({
+        phoneNumber: z.string().optional(),
+        address: z
+          .object({
+            street: z.string().optional(),
+            city: z.string().optional(),
+            state: z.string().optional(),
+            zipCode: z.string().optional(),
+          })
+          .optional(),
+      })
+      .optional(),
+
+    practice: z
+      .object({
+        clinicId: objectIdSchema.optional(),
+        consultationFee: z.number().nonnegative().optional(),
+        timeSlotPerClient: z.number().min(5).optional(),
+        isVerified: z.boolean().optional(),
+        isActive: z.boolean().optional(),
+      })
+      .optional(),
+
+    background: z
+      .object({
+        qualifications: z
+          .array(
+            z.object({
+              institution: z.string(),
+              major: z.string(),
+              yearGraduated: z.number(),
+            }),
+          )
+          .optional(),
+        previousExperience: z
+          .array(
+            z.object({
+              clinicName: z.string(),
+              years: z.number(),
+              role: z.string(),
+            }),
+          )
+          .optional(),
+        languagesSpoken: z.array(z.string()).optional(),
+        bio: z.string().max(500).optional(),
+      })
+      .optional(),
+
+    professional: z
+      .object({
+        specialization: z.array(z.string()).optional(),
+        licenseNo: z.string().optional(),
+        practicingFrom: z.coerce.date().optional(), // Coerce handles string-to-date conversion
+        yearsOfExperience: z.number().min(0).optional(),
+        averageRating: z.number().min(0).max(5).optional(),
+      })
+      .optional(),
+  })
+  .partial();
 
 // This automatically creates a TypeScript type from the schema!
 export type UserLightRegisterSchema = z.infer<typeof userLightRegisterSchema>;
@@ -136,6 +165,6 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 export type ResetPasswordLinkInput = z.infer<typeof ResetPasswordLinkSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 export type VerifyAccountInput = z.infer<typeof VerifyAccountSchema>;
+export type UpdateDoctorBody = z.infer<typeof updateDoctorSchema>;
 
 //---------------------------------old schemas-------------------------//
-export type DoctorRegistrationInput = z.infer<typeof doctorRegistrationSchema>;

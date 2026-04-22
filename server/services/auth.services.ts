@@ -57,8 +57,14 @@ const sendForgotPassowrdLinkEmail = async (resetUrl: string, user: any) => {
       html: htmlContent,
       text: `Reset your password here: ${resetUrl}`,
     });
-  } catch (err) {
-    logger.info(`Error while sending email : ${err.message}`);
+  } catch (err: unknown) {
+    console.error("Email sending failed:", err);
+
+    if (err instanceof Error) {
+      logger.error(`Email sending failed: ${err?.message}`);
+    } else {
+      logger.error(`an unknown error occurred: ${String(err)}`);
+    }
 
     return null;
   }
@@ -67,7 +73,9 @@ const sendForgotPassowrdLinkEmail = async (resetUrl: string, user: any) => {
 
 // services/auth.service.ts
 export class AuthService {
-  static async registerAuthDetails(registrationData: UserLightRegisterSchema) {
+  static async registerAuthDetails(
+    registrationData: UserLightRegisterSchema["body"],
+  ) {
     try {
       const userExists = await UserRepository.findByEmail(
         registrationData.email,
@@ -102,8 +110,12 @@ export class AuthService {
       await sendVerificationEmail(newUser.email, token);
 
       return { response, newUser };
-    } catch (err) {
-      logger.error(`error while creating user : ${err?.message}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        logger.error(`error while creating user: ${err.message}`);
+      } else {
+        logger.error(`an unknown error occurred: ${String(err)}`);
+      }
       return null;
     }
   }
@@ -164,11 +176,14 @@ export class AuthService {
 
     try {
       sendForgotPassowrdLinkEmail(resetUrl, user);
-    } catch (err) {
-      console.log(err);
-      logger.error(
-        `error while sending email to : ${email} , error ${err?.message}`,
-      );
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        logger.error(
+          `error while sending email to : ${email} , error ${err?.message}`,
+        );
+      } else {
+        logger.error(`an unknown error occurred: ${String(err)}`);
+      }
 
       return "couldn't send email";
     }
@@ -184,7 +199,7 @@ export class AuthService {
       return "User with this email does not exist";
     }
 
-    const jwtKey = process.env.JWT_SECRETE_KEY;
+    const jwtKey = process.env.JWT_SECRETE_KEY!;
 
     try {
       jwt.verify(token, jwtKey);
@@ -215,8 +230,13 @@ export class AuthService {
 
     try {
       jwt.verify(token, secret);
-    } catch (err) {
-      logger.error(`Error while verifying token : ${err.message}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        logger.error(`Error while verifying token : ${err.message}`);
+        return "couldn't generate token";
+      } else {
+        logger.error(`an unknown error occurred: ${String(err)}`);
+      }
       return "couldn't generate token";
     }
 
@@ -228,8 +248,13 @@ export class AuthService {
       const success = await UserRepository.updatePassword(id, hashedPassword);
 
       if (!success) return null;
-    } catch (err) {
-      logger.error(`Error while updating password : ${err.message}`);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        logger.error(`Error while updating password : ${err.message}`);
+        return "couldn't update password";
+      } else {
+        logger.error(`an unknown error occurred: ${String(err)}`);
+      }
       return "couldn't update password";
     }
 

@@ -1,62 +1,71 @@
 import mongoose, { Schema } from "mongoose";
-import bcrypt from "bcrypt";
 
-const NurseSchema = new Schema(
+// 1. Sub-document for Contact & Address
+const ContactSchema = new Schema(
   {
-    fullName: { type: String, required: true },
-    nurseId: { type: String, required: true, unique: true, default: "PENDING" },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    contact: { type: String, required: true },
-    nursingRank: {
-      type: String,
-      enum: ["RN", "EN", "CNS", "NP"],
-      required: true,
-    },
-    departmentAssignment: { type: String, required: true },
-    licenseNumber: { type: String, required: true },
-    triageCertified: { type: Boolean, default: false },
-    shiftType: {
-      type: String,
-      enum: ["Day", "Night", "Rotational"],
-      default: "Day",
-    },
-    supervisingDoctorId: { type: Schema.Types.ObjectId, ref: "Doctor" },
-    specializedSkills: [{ type: String }],
-    languages: [{ type: String }],
+    phoneNumber: { type: String, required: true },
     address: {
       street: String,
       city: String,
       state: String,
       zipCode: String,
     },
-    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic", required: true },
-    isOnDuty: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+// 2. Sub-document for Professional & Clinical Info
+const ProfessionalSchema = new Schema(
+  {
+    nursingRank: {
+      type: String,
+      enum: ["RN", "EN", "CNS", "NP"],
+      required: true,
+    },
+    licenseNumber: { type: String, required: true },
+    departmentAssignment: { type: String, required: true },
+    triageCertified: { type: Boolean, default: false },
     canPrescribe: { type: Boolean, default: false },
+    specializedSkills: [{ type: String }],
+    languages: [{ type: String }],
+  },
+  { _id: false },
+);
+
+// 3. Sub-document for Practice & Status
+const DeploymentSchema = new Schema(
+  {
+    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic", required: true },
+    supervisingDoctorId: { type: Schema.Types.ObjectId, ref: "Doctor" },
+    shiftType: {
+      type: String,
+      enum: ["Day", "Night", "Rotational"],
+      default: "Day",
+    },
+    isOnDuty: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+const NurseSchema = new Schema(
+  {
+    // THE BRIDGE: Reference to the Global User Identity
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
+    fullName: { type: String, required: true },
+    nurseId: { type: String, required: true, unique: true, default: "PENDING" },
+    email: { type: String, required: true, unique: true },
+
+    // Grouped Sub-documents
+    contact: ContactSchema,
+    professional: ProfessionalSchema,
+    deployment: DeploymentSchema,
   },
   { timestamps: true },
 );
-
-NurseSchema.pre("save", async function () {
-  // 'this' refers to the document being saved
-  if (!this.isModified("password")) return;
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    // No need to call next() here!
-  } catch (error: any) {
-    // Re-throw the error so Mongoose catches it
-    throw error;
-  }
-});
-
-NurseSchema.pre("save", async function () {
-  if (!this.isNew) return; // Only run when creating a new patient
-
-  // Generate a random or sequential ID (e.g., PAT-8372)
-  const randomDigits = Math.floor(1000 + Math.random() * 9000);
-  this.nurseId = `PAT-${randomDigits}`;
-});
 
 export const Nurse = mongoose.model("Nurse", NurseSchema);

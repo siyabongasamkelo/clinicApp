@@ -2,14 +2,15 @@
 import { User } from "../models/userModel";
 import { Doctor } from "../models/doctorModel";
 import bcrypt from "bcrypt";
-// import { Nurse } from "../models/Nurse";
-import { IRegistrationInput } from "../types/auth.type";
+import { Nurse } from "../models/nurseModel";
+import { Patient } from "../models/patientModel";
 import { UserRepository } from "../repository/userRepository";
+import { UserLightRegisterSchema } from "../validation/auth.schema.ts";
 
 import mongoose from "mongoose";
 
 export class AuthRepository {
-  static async createInitialAccount(data: IRegistrationInput) {
+  static async createInitialAccount(data: UserLightRegisterSchema["body"]) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -39,12 +40,30 @@ export class AuthRepository {
           { session },
         );
       }
-      //else if (data.role === 'NURSE') {
-      //     [profile] = await Nurse.create([{
-      //       userId: newUser._id,
-      //       fullName: data.fullName
-      //     }], { session });
-      //   }
+
+      if (data.role === "NURSE") {
+        [profile] = await Nurse.create(
+          [
+            {
+              userId: newUser._id,
+              fullName: data.fullName,
+            },
+          ],
+          { session },
+        );
+      }
+
+      if (data.role === "PATIENT") {
+        [profile] = await Patient.create(
+          [
+            {
+              userId: newUser._id,
+              fullName: data.fullName,
+            },
+          ],
+          { session },
+        );
+      }
 
       await session.commitTransaction();
       return newUser;
@@ -66,8 +85,11 @@ export class AuthRepository {
     if (!isMatch) return null;
 
     // 3. Fetch the Profile using our existing Repository Pattern
-    // This uses the UserRepository we built earlier to get the Doctor/Nurse profile
-    const profile = await UserRepository.getUserProfile(user._id, user.role);
+
+    const profile = await UserRepository.getUserProfile(
+      user._id.toString(),
+      user.role,
+    );
 
     return { user, profile };
   }

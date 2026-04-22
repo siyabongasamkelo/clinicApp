@@ -1,6 +1,6 @@
 // repositories/UserRepository.ts
 import { User } from "../models/userModel";
-// import { Nurse } from '../models/Nurse';
+import { Doctor } from "../models/doctorModel";
 import { DoctorAdapter, UserAdapter } from "../adapters/userAdapter";
 
 export class UserRepository {
@@ -9,10 +9,6 @@ export class UserRepository {
       const data = await Doctor.findOne({ userId });
       return data ? new DoctorAdapter(data) : null;
     }
-    // if (role === 'NURSE') {
-    //   const data = await Nurse.findOne({ userId });
-    //   return data ? new NurseAdapter(data) : null;
-    // }
     return null;
   }
 
@@ -20,33 +16,18 @@ export class UserRepository {
     const data = await User.findOne({ userId });
 
     return data ? new UserAdapter(data) : null;
-    // return data;
-    // if (role === 'NURSE') {
-    //   const data = await Nurse.findOne({ userId });
-    //   return data ? new NurseAdapter(data) : null;
-    // }
   }
 
   static async findByEmail(email: string) {
     const data = await User.findOne({ email });
 
     return data ? new UserAdapter(data) : null;
-    // return data;
-    // if (role === 'NURSE') {
-    //   const data = await Nurse.findOne({ userId });
-    //   return data ? new NurseAdapter(data) : null;
-    // }
   }
 
   static async findById(id: string) {
     const data = await User.findById(id);
 
     return data ? new UserAdapter(data) : null;
-    // return data;
-    // if (role === 'NURSE') {
-    //   const data = await Nurse.findOne({ userId });
-    //   return data ? new NurseAdapter(data) : null;
-    // }
   }
 
   // user.repository.ts
