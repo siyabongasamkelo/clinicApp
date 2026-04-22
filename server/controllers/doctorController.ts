@@ -1,23 +1,66 @@
 // controllers/doctor.controller.ts
-import { DoctorRepository } from "../repository/doctorRepository";
-import { DoctorAdapter } from "../adapters/doctorAdaptor";
+import type { Request, Response, NextFunction } from "express";
+import { DoctorService } from "../services/doctor.services.ts";
 
-export const updateProfile = async (req: Request, res: Response) => {
+export const updateDoctor = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    const userId = req.user.id; // From your Auth Middleware
+    const { id } = req.params;
+    const updateData = req.body;
 
-    // 1. Adapt/Clean the incoming data
-    const updateData = DoctorAdapter.toUpdateFormat(req.body);
+    const result = await DoctorService.updateDoctorDetails(
+      id.toString(),
+      updateData,
+    );
 
-    // 2. Perform the update via Repository
-    const profile = await DoctorRepository.updateProfile(userId, updateData);
+    res.status(200).json({
+      message: "Doctor profile updated successfully",
+      status: "success",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (!profile) {
-      return res.status(404).json({ message: "Doctor profile not found" });
-    }
+export const findDoctor = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.body;
+    console.log("working");
+    const result = await DoctorService.findById(id);
 
-    res.json({ message: "Profile updated successfully!", profile });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(200).json({
+      message: "Doctor found successfully",
+      status: "success",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const findByClinic = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { clinicId } = req.body;
+
+    const result = await DoctorService.findByClinic(clinicId);
+
+    res.status(200).json({
+      message: "Doctors found successfully",
+      status: "success",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
   }
 };
