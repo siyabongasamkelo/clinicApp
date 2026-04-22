@@ -32,7 +32,3 @@ export class UserAdapter {
     this.email = user.email || "";
   }
 }
-
-export class NurseAdapter implements IUser {
-  // Similar logic for Nurse
-}
