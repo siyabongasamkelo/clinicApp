@@ -5,6 +5,8 @@ The system supports multiple user roles: Doctors, Nurses, and Admins, each with 
 
 This project emphasizes backend architecture, database design, and system-level thinking over flashy UI design. It’s intended to demonstrate problem-solving skills and the ability to develop functional, real-world systems that address critical workflow challenges in healthcare.
 
+
+
 Key Features:
 
 Role-based access control (Doctor, Nurse, Admin)
@@ -21,13 +23,28 @@ Authentication and authorization with JWT
 
 Tech Stack:
 
+
+
+
 Node.js + Express
+
+Typescript
+
+Reactjs + Styled-componnets
 
 MongoDB + Mongoose
 
 JWT for authentication
 
 dotenv for environment variables
+
+
+
+architecture:
+
+Layered Architecture + Hexagonal Architecture
+
+SOLID princeple
 
 Purpose:
 To solve practical problems in clinic operations, providing a structured, reliable, and secure backend system while highlighting backend and full-stack development capabilities.
