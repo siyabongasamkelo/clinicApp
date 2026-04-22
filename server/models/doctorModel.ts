@@ -17,7 +17,8 @@ const ContactSchema = new Schema(
 // Sub-document for Practice Details
 const PracticeSchema = new Schema(
   {
-    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic" },
+    // clinicId: { type: Schema.Types.ObjectId, ref: "Clinic" },
+    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic", index: true },
     consultationFee: { type: Number },
     timeSlotPerClient: { type: Number, default: 30 },
     isVerified: { type: Boolean, default: false },
@@ -79,3 +80,12 @@ const DoctorSchema = new Schema(
 );
 
 export const Doctor = mongoose.model("Doctor", DoctorSchema);
+
+// At the bottom of your Doctor Model file
+export type DoctorDocument = mongoose.InferSchemaType<typeof DoctorSchema>;
+
+// For your Services (where you might only have part of the data)
+export type UpdateDoctorInput = Partial<DoctorDocument>;
+
+// For your Services (where you might only have part of the data)
+// export type CreateDoctorInput = Omit<DoctorDocument, "_id">;
