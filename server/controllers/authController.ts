@@ -1,9 +1,7 @@
 import dotenv from "dotenv";
 import sendEmail from "../utils/sendEmail.js";
 import type { Request, Response, NextFunction } from "express";
-// import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { AuthRepository } from "../repository/authRepository.ts";
 import { AuthAdapter } from "../adapters/authAdaptor.ts";
 import { AuthService } from "../services/auth.services.ts";
 import logger from "../utils/logger.js";
@@ -246,9 +244,6 @@ export const verifyEmailRequest = async (
 
     if (verifyEmail === "user does not exist")
       return next(new ApiError(404, "User not found."));
-
-    if (verifyEmail === "couldn't generate token")
-      return next(new ApiError(501, "Internal server error"));
 
     if (verifyEmail === "couldn't generate token")
       return next(new ApiError(501, "Internal server error"));
