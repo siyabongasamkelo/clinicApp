@@ -13,7 +13,6 @@ export class AuthRepository {
   static async createInitialAccount(data: UserLightRegisterSchema["body"]) {
     const session = await mongoose.startSession();
     session.startTransaction();
-
     try {
       // 1. Create Identity
       const [newUser] = await User.create(
