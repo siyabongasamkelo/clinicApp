@@ -11,6 +11,9 @@ import helmet from "helmet";
 import { errorMiddleware } from "./middleware/errorMiddleware.ts";
 // import appointmentRoutes from "./routes/appointmentRoutes.js";
 import doctorRoute from "./routes/doctorRoute.ts";
+import nurseRoute from "./routes/nurseRoutes.ts";
+import patientRoute from "./routes/patientRoute.ts";
+
 // Initialize the app with the Application type
 const app: Application = express();
 
@@ -45,6 +48,8 @@ app.use(
 // Routes
 app.use("/auth", authRoutes);
 app.use("/doctor", doctorRoute);
+app.use("/nurse", nurseRoute);
+app.use("/patient", patientRoute);
 // app.use("/api/appointments", appointmentRoutes);
 
 // Swagger Documentation
