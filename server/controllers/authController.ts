@@ -73,7 +73,6 @@ export const registerLite = async (
 ) => {
   try {
     const registrationData = req.body;
-
     const newUser = await AuthService.registerAuthDetails(registrationData);
 
     if (!newUser)
