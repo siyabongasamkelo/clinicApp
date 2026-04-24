@@ -3,7 +3,7 @@ import mongoose, { Schema } from "mongoose";
 // 1. Sub-document for Contact & Address
 const ContactSchema = new Schema(
   {
-    phoneNumber: { type: String, required: true },
+    phoneNumber: { type: String },
     address: {
       street: String,
       city: String,
@@ -20,10 +20,9 @@ const ProfessionalSchema = new Schema(
     nursingRank: {
       type: String,
       enum: ["RN", "EN", "CNS", "NP"],
-      required: true,
     },
-    licenseNumber: { type: String, required: true },
-    departmentAssignment: { type: String, required: true },
+    licenseNumber: { type: String },
+    departmentAssignment: { type: String },
     triageCertified: { type: Boolean, default: false },
     canPrescribe: { type: Boolean, default: false },
     specializedSkills: [{ type: String }],
@@ -35,7 +34,7 @@ const ProfessionalSchema = new Schema(
 // 3. Sub-document for Practice & Status
 const DeploymentSchema = new Schema(
   {
-    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic", required: true },
+    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic" },
     supervisingDoctorId: { type: Schema.Types.ObjectId, ref: "Doctor" },
     shiftType: {
       type: String,
@@ -58,7 +57,6 @@ const NurseSchema = new Schema(
     },
     fullName: { type: String, required: true },
     nurseId: { type: String, required: true, unique: true, default: "PENDING" },
-    email: { type: String, required: true, unique: true },
 
     // Grouped Sub-documents
     contact: ContactSchema,
@@ -69,3 +67,7 @@ const NurseSchema = new Schema(
 );
 
 export const Nurse = mongoose.model("Nurse", NurseSchema);
+
+export type NurseDocument = mongoose.InferSchemaType<typeof NurseSchema>;
+
+export type UpdateNurseInput = Partial<NurseDocument>;

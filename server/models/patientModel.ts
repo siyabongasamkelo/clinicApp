@@ -25,8 +25,8 @@ const PersonalDetailsSchema = new Schema(
   {
     occupation: { type: String },
     emergencyContact: {
-      name: { type: String, required: true },
-      phone: { type: String, required: true },
+      name: { type: String },
+      phone: { type: String },
     },
     lifestyle: {
       smokingStatus: {
@@ -52,10 +52,10 @@ const PatientSchema = new Schema(
       unique: true,
     },
     fullName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    contactNumber: { type: String, required: true },
-    dateOfBirth: { type: Date, required: true },
-    gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
+    email: { type: String, unique: true },
+    contactNumber: { type: String },
+    dateOfBirth: { type: Date },
+    gender: { type: String, enum: ["Male", "Female", "Other"] },
 
     // Grouped Sub-documents
     medicalHistory: MedicalHistorySchema,
@@ -82,3 +82,6 @@ const PatientSchema = new Schema(
 
 export type PatientType = mongoose.InferSchemaType<typeof PatientSchema>;
 export const Patient = mongoose.model("Patient", PatientSchema);
+
+export type PatientDocument = mongoose.InferSchemaType<typeof PatientSchema>;
+export type UpdatePatientInput = Partial<PatientDocument>;
