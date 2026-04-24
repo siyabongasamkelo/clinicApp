@@ -111,6 +111,7 @@ export class AuthService {
 
       return { response, newUser };
     } catch (err: unknown) {
+      // console.log("error while creating user", err);
       if (err instanceof Error) {
         logger.error(`error while creating user: ${err.message}`);
       } else {
