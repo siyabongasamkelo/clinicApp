@@ -32,7 +32,6 @@ export const findDoctor = async (
 ) => {
   try {
     const { id } = req.body;
-    console.log("working");
     const result = await DoctorService.findById(id);
 
     res.status(200).json({
