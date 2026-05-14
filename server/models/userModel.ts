@@ -1,6 +1,7 @@
 // models/User.ts
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
+import { eventBus } from "../utils/eventBus";
 const UserSchema = new Schema(
   {
     // The unique identifier for login (e.g., Staff ID or Email)
@@ -67,6 +68,17 @@ UserSchema.pre("save", async function () {
       const randomDigits = Math.floor(1000 + Math.random() * 9000);
       user.identifier = `${prefix}-${randomDigits}`;
     }
+  }
+
+  //event listener
+
+  if (user.isVerified) {
+    eventBus.emit("user:verified", {
+      userId: user._id,
+      email: user.email,
+      // name: user.name,
+      role: user.role, // e.g., 'Doctor' or 'ClinicAdmin'
+    });
   }
 });
 
