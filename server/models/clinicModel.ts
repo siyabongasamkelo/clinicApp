@@ -42,6 +42,11 @@ const ClinicSchema = new Schema(
     registrationNumber: { type: String, unique: true }, // For verification
     email: { type: String },
     phone: { type: String },
+    identifier: {
+      type: String,
+      unique: true,
+      trim: true,
+    },
 
     // Branding & Visuals
     logo: { type: String }, // URL to image
@@ -75,6 +80,16 @@ const ClinicSchema = new Schema(
   },
   { timestamps: true },
 );
+
+ClinicSchema.pre("save", async function () {
+  const clinic = this;
+
+  // 2. Identifier Generation
+  if (clinic.isNew && !clinic.identifier) {
+    const randomDigits = Math.floor(1000 + Math.random() * 9000);
+    clinic.identifier = `CLI-${randomDigits}`;
+  }
+});
 
 export const Clinic = mongoose.model("Clinic", ClinicSchema);
 export type ClinicType = mongoose.InferSchemaType<typeof ClinicSchema>;
