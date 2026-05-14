@@ -13,6 +13,7 @@ import { errorMiddleware } from "./middleware/errorMiddleware.ts";
 import doctorRoute from "./routes/doctorRoute.ts";
 import nurseRoute from "./routes/nurseRoutes.ts";
 import patientRoute from "./routes/patientRoute.ts";
+import clinicRoute from "./routes/clinicRoutes.ts";
 
 // Initialize the app with the Application type
 const app: Application = express();
@@ -50,6 +51,7 @@ app.use("/auth", authRoutes);
 app.use("/doctor", doctorRoute);
 app.use("/nurse", nurseRoute);
 app.use("/patient", patientRoute);
+app.use("/clinic", clinicRoute);
 // app.use("/api/appointments", appointmentRoutes);
 
 // Swagger Documentation
