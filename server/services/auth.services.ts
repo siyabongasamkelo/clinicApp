@@ -9,6 +9,9 @@ import { UserLightRegisterSchema } from "../validation/auth.schema.ts";
 import { AuthAdapter } from "../adapters/authAdaptor.ts";
 import sendEmail from "../utils/sendEmail.js";
 import logger from "../utils/logger.js";
+import { ApiError } from "../utils/ApiError.js";
+
+// import { eventBus } from "../utils/eventBus";
 
 dotenv.config();
 
@@ -85,7 +88,7 @@ export class AuthService {
         logger.error(
           `User with this email already exists: ${registrationData.email}`,
         );
-        return "User with this email already exists";
+        throw new ApiError(409, "User with this already exists");
       }
 
       // 1. Validate User Data
@@ -93,12 +96,22 @@ export class AuthService {
       const newUser =
         await AuthRepository.createInitialAccount(registrationData);
 
-      if (!newUser) return null;
+      if (!newUser) {
+        logger.error(
+          `an error  occured while registering user with email: ${registrationData.email}`,
+        );
+        throw new ApiError(501, "error  occured while registering user");
+      }
 
       // 3. Adapt the result (Data Transformation)
       const response = AuthAdapter.toRegisterResponse(newUser);
 
-      if (!response) return null;
+      if (!response) {
+        logger.error(
+          `an error  occured while formating response with authAdaptor for this user: ${registrationData.email}`,
+        );
+        throw new ApiError(501, "internal server error");
+      }
 
       const token = jwt.sign(
         { id: newUser.id, role: newUser.role },
@@ -109,9 +122,10 @@ export class AuthService {
       // 4. Send Email
       await sendVerificationEmail(newUser.email, token);
 
+      logger.info(`User created successfully : ${newUser.identifier}`);
+
       return { response, newUser };
     } catch (err: unknown) {
-      // console.log("error while creating user", err);
       if (err instanceof Error) {
         logger.error(`error while creating user: ${err.message}`);
       } else {
@@ -126,7 +140,7 @@ export class AuthService {
     const user = await UserRepository.findByIdentifier(identifier);
     if (!user) {
       logger.info(`user with identifier : ${identifier} does not exist `);
-      return null;
+      throw new ApiError(404, "user not found");
     }
 
     // 2. Logic: Check password
@@ -134,7 +148,7 @@ export class AuthService {
 
     if (!isMatch) {
       logger.info(`incorrect email or password by user : ${identifier}`);
-      return null;
+      throw new ApiError(401, "incorrect email or password");
     }
 
     // 3. Repo finds the Profile
@@ -142,7 +156,7 @@ export class AuthService {
 
     if (!profile) {
       logger.info(`Profile not found for user : ${identifier}`);
-      return null;
+      throw new ApiError(501, "internal server error");
     }
 
     // 4. Logic: Generate Token
@@ -152,14 +166,16 @@ export class AuthService {
       { expiresIn: "1d" },
     );
 
-    return { user, profile, token };
+    const response = AuthAdapter.toLoginResponse(user, profile, token);
+
+    return { response };
   }
 
   static async getResetPasswordLink(email: string) {
     const user = await UserRepository.findByEmail(email);
     if (!user) {
       logger.error(`user with email: ${email} does not exist`);
-      return "user does not exist";
+      throw new ApiError(404, "user with this email does not exist");
     }
 
     const secret = process.env.JWT_SECRETE_KEY + user.password;
@@ -182,8 +198,10 @@ export class AuthService {
         logger.error(
           `error while sending email to : ${email} , error ${err?.message}`,
         );
+        throw new ApiError(501, "error while sending email");
       } else {
         logger.error(`an unknown error occurred: ${String(err)}`);
+        throw new ApiError(501, "error while sending email");
       }
 
       return "couldn't send email";
@@ -197,7 +215,7 @@ export class AuthService {
 
     if (!user) {
       logger.error(`User with this email does not exist: ${email}`);
-      return "User with this email does not exist";
+      throw new ApiError(404, "user not found");
     }
 
     const jwtKey = process.env.JWT_SECRETE_KEY!;
@@ -206,25 +224,24 @@ export class AuthService {
       jwt.verify(token, jwtKey);
     } catch (tokenErr) {
       logger.error(`Token verification failed: ${tokenErr}`);
-      return "Token verification failed";
+      throw new ApiError(501, "internal server error");
     }
 
     const verifyAccount = await UserRepository.verifyAccount(user.id);
 
     if (!verifyAccount) {
       logger.error(`Error while verifying account: ${verifyAccount}`);
-      return "Error while verifying account";
+      throw new ApiError(501, "internal server error");
     }
 
-    return "Email successfully verified.";
+    return { message: "Account verified successfully" };
   }
 
   static async resetPassword(password: string, id: string, token: string) {
     const user = await UserRepository.findById(id);
     if (!user) {
       logger.error(`user with id: ${id} does not exist`);
-
-      return "No user";
+      throw new ApiError(404, "user with this email does not exist");
     }
 
     const secret = process.env.JWT_SECRETE_KEY + user.password;
@@ -234,11 +251,11 @@ export class AuthService {
     } catch (err: unknown) {
       if (err instanceof Error) {
         logger.error(`Error while verifying token : ${err.message}`);
-        return "couldn't generate token";
+        throw new ApiError(500, "internal server error");
       } else {
         logger.error(`an unknown error occurred: ${String(err)}`);
+        throw new ApiError(500, "internal server error");
       }
-      return "couldn't generate token";
     }
 
     //updating password
@@ -248,15 +265,20 @@ export class AuthService {
     try {
       const success = await UserRepository.updatePassword(id, hashedPassword);
 
-      if (!success) return null;
+      if (!success) {
+        logger.error(`couldn't update password for this user ${id}`);
+        throw new ApiError(500, "internal server error");
+      }
+
+      logger.info(`Password reset successfully by user with this Id : ${id}`);
     } catch (err: unknown) {
       if (err instanceof Error) {
         logger.error(`Error while updating password : ${err.message}`);
-        return "couldn't update password";
+        throw new ApiError(500, "internal server error");
       } else {
         logger.error(`an unknown error occurred: ${String(err)}`);
+        throw new ApiError(500, "internal server error");
       }
-      return "couldn't update password";
     }
 
     return { message: "password was updated successfully" };
@@ -267,7 +289,7 @@ export class AuthService {
 
     if (!user) {
       logger.error(`user with email: ${email} does not exist`);
-      return "user does not exist";
+      throw new ApiError(404, "user with this email does not exist");
     }
 
     const token = jwt.sign(
@@ -280,7 +302,7 @@ export class AuthService {
       logger.error(
         `could not generate token: for user with this email:${email}`,
       );
-      return "couldn't generate token";
+      throw new ApiError(501, "Internal server error");
     }
 
     // 4. Send Email
