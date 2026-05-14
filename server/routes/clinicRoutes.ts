@@ -8,6 +8,8 @@ import {
   findByName,
   updateClinic,
   createClinic,
+  getClinicQr,
+  verifyCheckIn,
 } from "../controllers/clinicController.js";
 import { validate } from "../middleware/validate.middleware";
 import {
@@ -15,6 +17,8 @@ import {
   getClinicByIdSchema,
   getClinicByNameSchema,
   getClinicByTownSchema,
+  getClinicQrSchema,
+  verifyCheckInSchema,
 } from "../validation/clinic.schema.js";
 dotenv.config();
 
@@ -27,6 +31,8 @@ router.post("/update-details/:id", validate(ClinicZodSchema), updateClinic);
 router.post("/get-clinic", validate(getClinicByIdSchema), findById);
 
 router.post("/find-by-name", validate(getClinicByNameSchema), findByName);
+
+router.post("/find-by-town", validate(getClinicByTownSchema), findByTown);
 
 router.post("/find-by-town", validate(getClinicByTownSchema), findByTown);
 
