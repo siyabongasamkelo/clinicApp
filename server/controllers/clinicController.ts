@@ -1,6 +1,8 @@
 // controllers/doctor.controller.ts
 import type { Request, Response, NextFunction } from "express";
 import { ClinicService } from "../services/clinic.services.ts";
+import { CheckInService } from "../services/checkIn.services.ts";
+import { QrService } from "../services/qrCode.services.ts";
 
 export const createClinic = async (
   req: Request,
@@ -100,5 +102,42 @@ export const findByTown = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const getClinicQr = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const qrImage = await QrService.generateClinicQr(id as string);
+    return res.status(200).json({ success: true, qrImage });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Error generating QR" });
+  }
+};
+
+export const verifyCheckIn = async (req: Request, res: Response) => {
+  const { scannedId, userId } = req.body;
+  try {
+    const clinic = await ClinicService.findById(scannedId);
+
+    if (!clinic) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Invalid Clinic QR" });
+    }
+
+    // Logic to record the check-in in your DB
+    await CheckInService.create({ userId, clinicId: clinic.id });
+
+    return res.status(200).json({
+      success: true,
+      message: `Checked into ${clinic.name}`,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Verification failed" });
   }
 };
