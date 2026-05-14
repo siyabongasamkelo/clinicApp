@@ -1,49 +1,45 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const appointmentSchema = new mongoose.Schema(
+const BookingSchema = new Schema(
   {
-    patientId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "Patient ID is required"],
+    clinicId: { type: Schema.Types.ObjectId, ref: "Clinic", required: true },
+    patientId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    doctorId: { type: Schema.Types.ObjectId, ref: "Doctor" },
+    nurseId: { type: Schema.Types.ObjectId, ref: "Nurse", required: true },
+
+    // The specific service they are coming for
+    service: {
+      name: String,
+      price: Number,
+      duration: { type: Number, default: 30 }, // Duration in minutes
     },
-    appointmentDate: { type: Date, required: true }, // e.g., 2024-06-15
-    doctorId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Assuming Doctors are also in the User table with a 'doctor' role
-      // required: [true, "Doctor ID is required"],
-    },
-    // The start of the 1.5h block (e.g., 2024-06-10T04:00:00Z)
-    sessionId: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 10,
-    },
+
+    // Timing
+    appointmentDate: { type: Date, required: true }, // The day
+    startTime: { type: String, required: true }, // e.g., "10:30"
+    endTime: { type: String, required: true }, // e.g., "11:00"
+
     status: {
       type: String,
-      enum: ["pending", "confirmed", "completed", "cancelled", "no-show"],
+      enum: ["pending", "confirmed", "cancelled", "completed", "no-show"],
       default: "pending",
     },
-    reasonForVisit: {
+
+    notes: { type: String }, // Patient symptoms or special requests
+    paymentStatus: {
       type: String,
-      required: [true, "Please provide a reason for the visit"],
-      trim: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
+      enum: ["unpaid", "partial", "paid"],
+      default: "unpaid",
     },
   },
   { timestamps: true },
 );
 
-// Middleware to auto-calculate endTime before saving
-appointmentSchema.pre("save", async function (next) {
-  if (this.startTime) {
-    // Adding 90 minutes (1.5 hours)
-    this.endTime = new Date(this.startTime.getTime() + 90 * 60000);
-  }
-});
+// Indexing for fast lookups (Prevent double booking queries)
+BookingSchema.index({ clinicId: 1, appointmentDate: 1, startTime: 1 });
 
-export const Appointment = mongoose.model("Appointment", appointmentSchema);
+export const Booking = mongoose.model("Booking", BookingSchema);
+
+export type BookingDocument = mongoose.InferSchemaType<typeof BookingSchema>;
+
+export type AppointmentInput = Partial<BookingDocument>;
